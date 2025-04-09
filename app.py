@@ -61,6 +61,13 @@ def create_app(config_class=Config):
     app.register_blueprint(test_bp, url_prefix='/test')
     app.register_blueprint(payslips_bp, url_prefix='/payslips')
     
+    # Add custom Jinja filters
+    import json
+    @app.template_filter('from_json')
+    def from_json_filter(value):
+        """Convert a JSON string to a Python dictionary."""
+        return json.loads(value) if value else {}
+    
     return app
 
 # Create app instance
