@@ -46,6 +46,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint.startswith('payslips.') %}active{% endif %}" 
+                           href="{{ url_for('payslips.index') }}">
+                            <i class="fas fa-file-invoice-dollar me-1"></i> Payslips
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint.startswith('configuration.') %}active{% endif %}" 
                            href="{{ url_for('configuration.index') }}">
                             <i class="fas fa-sliders-h me-1"></i> Salary Configuration

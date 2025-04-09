@@ -1,0 +1,18 @@
+{{ company_name }}
+PAYSLIP NOTIFICATION
+
+Dear {{ employee.first_name }},
+
+Please find attached your payslip. This document contains detailed information about your earnings and deductions for the most recent pay period.
+
+IMPORTANT INFORMATION:
+This payslip is a confidential document and contains personal information. Please store it securely for your records.
+
+If you have any questions about your payslip or notice any discrepancies, please contact the Payroll Department as soon as possible.
+
+Thank you,
+The {{ company_name }} Payroll Team
+
+---
+This is an automated email. Please do not reply directly to this message.
+© {{ company_name }} | All Rights Reserved

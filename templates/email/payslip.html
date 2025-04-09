@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Payslip</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .footer {
+            text-align: center;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #777;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #0066cc;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .note {
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-left: 4px solid #0066cc;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ company_name }}</h1>
+        <h2>Payslip Notification</h2>
+    </div>
+    
+    <div class="content">
+        <p>Dear {{ employee.first_name }},</p>
+        
+        <p>Please find attached your payslip. This document contains detailed information about your earnings and deductions for the most recent pay period.</p>
+        
+        <div class="note">
+            <p><strong>Important Information:</strong></p>
+            <p>This payslip is a confidential document and contains personal information. Please store it securely for your records.</p>
+        </div>
+        
+        <p>If you have any questions about your payslip or notice any discrepancies, please contact the Payroll Department as soon as possible.</p>
+        
+        <p>Thank you,</p>
+        <p>The {{ company_name }} Payroll Team</p>
+    </div>
+    
+    <div class="footer">
+        <p>This is an automated email. Please do not reply directly to this message.</p>
+        <p>&copy; {{ company_name }} | All Rights Reserved</p>
+    </div>
+</body>
+</html>

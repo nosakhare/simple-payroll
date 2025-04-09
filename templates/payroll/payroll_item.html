@@ -19,8 +19,15 @@
                 <h1>Payroll Item Details</h1>
                 <div>
                     <a href="{{ url_for('payroll.payslip', id=payroll_item.id) }}" class="btn btn-primary">
-                        <i class="bi bi-printer"></i> View Payslip
+                        <i class="fas fa-file-invoice"></i> View Payslip
                     </a>
+                    {% if payroll.status != 'Draft' %}
+                    <form method="POST" action="{{ url_for('payslips.generate', payroll_item_id=payroll_item.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-file-pdf"></i> Generate PDF Payslip
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
         </div>

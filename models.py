@@ -291,3 +291,42 @@ class PayrollAdjustment(db.Model):
     
     def __repr__(self):
         return f'<PayrollAdjustment {self.id}: {self.adjustment_type} ₦{self.amount:,.2f}>'
+
+
+class Payslip(db.Model):
+    """Model for storing generated payslips."""
+    id = db.Column(db.Integer, primary_key=True)
+    payroll_item_id = db.Column(db.Integer, db.ForeignKey('payroll_item.id'), nullable=False)
+    pdf_data = db.Column(db.LargeBinary, nullable=False)  # Store the PDF binary data
+    filename = db.Column(db.String(256), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False)
+    is_emailed = db.Column(db.Boolean, default=False)
+    email_date = db.Column(db.DateTime, nullable=True)
+    email_status = db.Column(db.String(20), nullable=True)  # 'sent', 'failed', 'pending'
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    payroll_item = db.relationship('PayrollItem', backref='payslip')
+    created_by = db.relationship('User', backref='generated_payslips')
+    
+    def __repr__(self):
+        return f'<Payslip {self.id} for PayrollItem #{self.payroll_item_id}>'
+
+
+class EmailLog(db.Model):
+    """Model for tracking email deliveries."""
+    id = db.Column(db.Integer, primary_key=True)
+    payslip_id = db.Column(db.Integer, db.ForeignKey('payslip.id'), nullable=False)
+    recipient = db.Column(db.String(120), nullable=False)
+    subject = db.Column(db.String(256), nullable=False)
+    status = db.Column(db.String(20), nullable=False)  # 'sent', 'failed', 'pending'
+    error_message = db.Column(db.Text, nullable=True)
+    send_date = db.Column(db.DateTime, default=datetime.utcnow)
+    retry_count = db.Column(db.Integer, default=0)
+    
+    # Relationship
+    payslip = db.relationship('Payslip', backref='email_logs')
+    
+    def __repr__(self):
+        return f'<EmailLog {self.id} for Payslip #{self.payslip_id} - {self.status}>'

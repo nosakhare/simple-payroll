@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
+from flask_mail import Mail
 from config import Config
 
 # Set up logging
@@ -17,6 +18,7 @@ class Base(DeclarativeBase):
 # Initialize extensions
 db = SQLAlchemy(model_class=Base)
 login_manager = LoginManager()
+mail = Mail()
 
 # Create application factory
 def create_app(config_class=Config):
@@ -33,6 +35,7 @@ def create_app(config_class=Config):
     # Initialize extensions with app
     db.init_app(app)
     login_manager.init_app(app)
+    mail.init_app(app)
     
     # Configure login settings
     login_manager.login_view = 'auth.login'
@@ -47,6 +50,7 @@ def create_app(config_class=Config):
     from routes.configuration import configuration as configuration_bp
     from routes.calculator import calculator as calculator_bp
     from routes.test import test as test_bp
+    from routes.payslips import payslips as payslips_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -55,6 +59,7 @@ def create_app(config_class=Config):
     app.register_blueprint(configuration_bp, url_prefix='/configuration')
     app.register_blueprint(calculator_bp, url_prefix='/calculator')
     app.register_blueprint(test_bp, url_prefix='/test')
+    app.register_blueprint(payslips_bp, url_prefix='/payslips')
     
     return app
 
@@ -64,7 +69,10 @@ app = create_app()
 # Initialize database within app context
 with app.app_context():
     # Import models for database creation
-    from models import User, Employee, Payroll, PayrollItem, TaxBracket, AllowanceType, DeductionType, SalaryConfiguration
+    from models import (
+        User, Employee, Payroll, PayrollItem, TaxBracket, AllowanceType, 
+        DeductionType, SalaryConfiguration, PayrollAdjustment, Payslip, EmailLog
+    )
     
     # Create all tables
     db.create_all()

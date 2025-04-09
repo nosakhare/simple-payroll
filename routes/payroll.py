@@ -275,7 +275,16 @@ def payslip(id):
     """View a payslip for a specific payroll item."""
     payroll_item = PayrollItem.query.get_or_404(id)
     
-    # Generate payslip data
+    # Check if a PDF payslip already exists for this item
+    from models import Payslip
+    existing_payslip = Payslip.query.filter_by(payroll_item_id=id).first()
+    
+    if existing_payslip:
+        # Redirect to payslip view
+        flash('A PDF payslip already exists for this item.', 'info')
+        return redirect(url_for('payslips.view', id=existing_payslip.id))
+    
+    # Generate payslip data for the HTML view
     payslip_data = generate_payslip_data(id)
     if not payslip_data:
         flash('Error generating payslip.', 'danger')
