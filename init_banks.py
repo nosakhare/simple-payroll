@@ -80,10 +80,19 @@ def create_bank_json():
     print(f"Created bank_codes.json with {len(bank_data)} banks.")
     return True, f"Created bank_codes.json with {len(bank_data)} banks."
 
-if __name__ == "__main__":
+def create_or_update_banks():
+    """Create JSON file or initialize banks based on command line argument."""
+    import sys
+    
     with app.app_context():
-        # First create the JSON file
-        success, message = create_bank_json()
-        if success:
-            # Then initialize the banks
-            init_banks()
+        if len(sys.argv) > 1 and sys.argv[1] == 'create_json':
+            # Just create the JSON file
+            success, message = create_bank_json()
+            print(message)
+        else:
+            # Initialize banks from existing JSON
+            success, message = init_banks()
+            print(message)
+
+if __name__ == "__main__":
+    create_or_update_banks()
