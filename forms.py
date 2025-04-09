@@ -153,6 +153,19 @@ class DeductionTypeForm(FlaskForm):
     is_tax_deductible = BooleanField('Tax Deductible')
     submit = SubmitField('Save Deduction Type')
 
+class CompensationChangeForm(FlaskForm):
+    """Form for updating employee compensation."""
+    basic_salary = FloatField('New Basic Salary (₦)', validators=[DataRequired(), NumberRange(min=0)])
+    effective_date = DateField('Effective Date', validators=[DataRequired()])
+    change_reason = TextAreaField('Reason for Change', validators=[Optional(), Length(max=256)])
+    submit = SubmitField('Update Compensation')
+    
+    def validate_effective_date(self, field):
+        """Validate the effective date."""
+        if field.data < date.today():
+            raise ValidationError('Effective date must be today or in the future')
+
+
 class SearchForm(FlaskForm):
     """Form for searching employees."""
     query = StringField('Search', validators=[Optional()])

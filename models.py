@@ -67,6 +67,7 @@ class Employee(db.Model):
     
     # Relationships
     payroll_items = db.relationship('PayrollItem', backref='employee', lazy=True)
+    compensation_history = db.relationship('CompensationHistory', backref='employee', lazy=True, order_by='CompensationHistory.effective_date.desc()')
     
     def __repr__(self):
         return f'<Employee {self.employee_id}: {self.first_name} {self.last_name}>'
@@ -135,6 +136,25 @@ class Payroll(db.Model):
     
     def __repr__(self):
         return f'<Payroll {self.name} [{self.status}]>'
+
+class CompensationHistory(db.Model):
+    """Model for tracking employee compensation history and changes."""
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
+    effective_date = db.Column(db.Date, nullable=False)
+    basic_salary = db.Column(db.Float, nullable=False)
+    
+    # Record who made the change and when
+    changed_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    change_reason = db.Column(db.String(256), nullable=True)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    changed_by = db.relationship('User', backref='compensation_changes')
+    
+    def __repr__(self):
+        return f'<CompensationHistory {self.id} for Employee #{self.employee_id} @{self.effective_date}>'
+
 
 class PayrollItem(db.Model):
     """Model for individual employee payroll records within a payroll run."""

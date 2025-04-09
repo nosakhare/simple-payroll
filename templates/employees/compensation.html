@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Compensation History - {{ employee.first_name }} {{ employee.last_name }} - Nigerian Payroll System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3"><i class="fas fa-money-bill-wave me-2"></i> Compensation History</h1>
+    <div>
+        <a href="{{ url_for('employees.view', id=employee.id) }}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-user me-1"></i> Employee Details
+        </a>
+        <a href="{{ url_for('employees.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Employees
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Employee Summary Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Employee Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                        <i class="fas fa-user fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">{{ employee.first_name }} {{ employee.last_name }}</h5>
+                        <p class="text-muted mb-0">{{ employee.position }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block">Employee ID:</small>
+                    <div>{{ employee.employee_id }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block">Department:</small>
+                    <div>{{ employee.department }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block">Current Salary:</small>
+                    <div class="h5 text-primary">{{ format_currency(employee.basic_salary) }}</div>
+                </div>
+                
+                <div>
+                    <small class="text-muted d-block">Date Hired:</small>
+                    <div>{{ employee.date_hired.strftime('%d-%m-%Y') }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Compensation Update Form -->
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Update Compensation</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('employees.compensation', id=employee.id) }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.basic_salary.label(class="form-label") }}
+                                {{ form.basic_salary(class="form-control" + (" is-invalid" if form.basic_salary.errors else ""), type="number", step="0.01") }}
+                                {% for error in form.basic_salary.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.effective_date.label(class="form-label") }}
+                                {{ form.effective_date(class="form-control" + (" is-invalid" if form.effective_date.errors else ""), type="date") }}
+                                {% for error in form.effective_date.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">When this salary change takes effect</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-group">
+                            {{ form.change_reason.label(class="form-label") }}
+                            {{ form.change_reason(class="form-control" + (" is-invalid" if form.change_reason.errors else ""), rows=3) }}
+                            {% for error in form.change_reason.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">Describe the reason for this compensation change</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Update Compensation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Compensation History Table -->
+<div class="card">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">Compensation History</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Effective Date</th>
+                        <th>Basic Salary</th>
+                        <th>Reason</th>
+                        <th>Changed By</th>
+                        <th>Change Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if compensation_history %}
+                        {% for history in compensation_history %}
+                        <tr>
+                            <td>{{ history.effective_date.strftime('%d-%m-%Y') }}</td>
+                            <td class="text-nowrap">{{ format_currency(history.basic_salary) }}</td>
+                            <td>
+                                {% if history.change_reason %}
+                                    {{ history.change_reason }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ history.changed_by.first_name }} {{ history.changed_by.last_name }}</td>
+                            <td>{{ history.date_created.strftime('%d-%m-%Y %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i> No compensation history records found
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

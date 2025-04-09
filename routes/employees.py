@@ -1,10 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_required
+from flask_login import login_required, current_user
 from sqlalchemy import or_
+from datetime import date
 
 from app import db
-from models import Employee
-from forms import EmployeeForm, SearchForm
+from models import Employee, CompensationHistory
+from forms import EmployeeForm, SearchForm, CompensationChangeForm
 from utils import format_currency
 
 employees = Blueprint('employees', __name__)
@@ -116,6 +117,18 @@ def edit(id):
             flash('Email already exists. Please use a different email address.', 'danger')
             return render_template('employees/edit.html', form=form, employee=employee)
         
+        # Check if salary changed, if so, record in compensation history
+        if employee.basic_salary != form.basic_salary.data:
+            # Create compensation history record
+            compensation_history = CompensationHistory(
+                employee_id=employee.id,
+                effective_date=date.today(),  # Default to today, can be changed via compensation form
+                basic_salary=form.basic_salary.data,
+                changed_by_id=current_user.id,
+                change_reason="Updated during employee edit"
+            )
+            db.session.add(compensation_history)
+        
         # Update employee
         employee.employee_id = form.employee_id.data
         employee.first_name = form.first_name.data
@@ -152,6 +165,52 @@ def view(id):
     """View employee details."""
     employee = Employee.query.get_or_404(id)
     return render_template('employees/view.html', employee=employee, format_currency=format_currency)
+
+@employees.route('/compensation/<int:id>', methods=['GET', 'POST'])
+@login_required
+def compensation(id):
+    """View and update employee compensation history."""
+    employee = Employee.query.get_or_404(id)
+    form = CompensationChangeForm()
+    
+    if form.validate_on_submit():
+        # Create new compensation history record
+        compensation_history = CompensationHistory(
+            employee_id=employee.id,
+            effective_date=form.effective_date.data,
+            basic_salary=form.basic_salary.data,
+            changed_by_id=current_user.id,
+            change_reason=form.change_reason.data
+        )
+        
+        # Update employee's current salary if effective date is today
+        if form.effective_date.data <= date.today():
+            employee.basic_salary = form.basic_salary.data
+        
+        db.session.add(compensation_history)
+        db.session.commit()
+        
+        flash(f'Compensation updated for {employee.full_name()}. New salary: {format_currency(form.basic_salary.data)} effective {form.effective_date.data.strftime("%d-%m-%Y")}.', 'success')
+        return redirect(url_for('employees.compensation', id=employee.id))
+    
+    # Pre-fill current salary
+    if not form.basic_salary.data:
+        form.basic_salary.data = employee.basic_salary
+        form.effective_date.data = date.today()
+    
+    # Get compensation history
+    compensation_history = CompensationHistory.query.filter_by(employee_id=employee.id).order_by(
+        CompensationHistory.effective_date.desc()
+    ).all()
+    
+    return render_template(
+        'employees/compensation.html', 
+        employee=employee, 
+        form=form, 
+        compensation_history=compensation_history,
+        format_currency=format_currency
+    )
+
 
 @employees.route('/delete/<int:id>', methods=['POST'])
 @login_required
