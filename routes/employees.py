@@ -1,7 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, Response
 from flask_login import login_required, current_user
 from sqlalchemy import or_
-from datetime import date
+from datetime import date, datetime
+import csv, io, codecs
+from werkzeug.utils import secure_filename
 
 from app import db
 from models import Employee, CompensationHistory
@@ -226,3 +228,223 @@ def delete(id):
     
     flash(f'Employee {employee_name} deleted successfully.', 'success')
     return redirect(url_for('employees.index'))
+
+
+@employees.route('/download-csv-template')
+@login_required
+def download_csv_template():
+    """Download a CSV template for bulk employee upload."""
+    # Create a CSV template with field headers
+    csv_data = io.StringIO()
+    writer = csv.writer(csv_data)
+    
+    # Write headers based on employee model fields
+    headers = [
+        # Personal Information
+        'employee_id', 'first_name', 'last_name', 'email', 'phone_number', 
+        'date_of_birth (YYYY-MM-DD)', 'gender (Male/Female/Other)', 
+        'marital_status (Single/Married/Divorced/Widowed)', 
+        'address', 'city', 'state',
+        
+        # Employment Details
+        'department', 'position', 'date_hired (YYYY-MM-DD)', 
+        'employment_status (Active/On Leave/Suspended/Terminated)',
+        
+        # Bank Details
+        'bank_name', 'account_number',
+        
+        # Tax Information (Optional)
+        'tax_id', 'pension_id', 'nhf_id',
+        
+        # Salary Information
+        'basic_salary',
+    ]
+    writer.writerow(headers)
+    
+    # Create CSV response
+    csv_data.seek(0)
+    
+    # Create the response with the CSV data
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    return Response(
+        csv_data.getvalue(),
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': f'attachment; filename=employee_upload_template_{timestamp}.csv'
+        }
+    )
+
+
+@employees.route('/bulk-upload', methods=['GET', 'POST'])
+@login_required
+def bulk_upload():
+    """Upload employees in bulk using a CSV file."""
+    if request.method == 'POST':
+        # Check if a file was uploaded
+        if 'file' not in request.files:
+            flash('No file part', 'danger')
+            return redirect(request.url)
+            
+        file = request.files['file']
+        
+        # Check if the file was selected
+        if file.filename == '':
+            flash('No selected file', 'danger')
+            return redirect(request.url)
+            
+        # Check if the file is a CSV
+        if not file.filename.endswith('.csv'):
+            flash('Only CSV files are allowed', 'danger')
+            return redirect(request.url)
+            
+        try:
+            # Read the CSV file
+            stream = codecs.iterdecode(file.stream, 'utf-8')
+            reader = csv.DictReader(stream)
+            
+            # Track success, errors and duplicates
+            success_count = 0
+            error_count = 0
+            duplicate_count = 0
+            errors = []
+            
+            # Process each row in the CSV
+            for row_num, row in enumerate(reader, start=2):  # Start at 2 to account for header row
+                try:
+                    # Check required fields
+                    required_fields = ['employee_id', 'first_name', 'last_name', 'email', 'phone_number', 
+                                      'date_of_birth (YYYY-MM-DD)', 'gender (Male/Female/Other)', 
+                                      'marital_status (Single/Married/Divorced/Widowed)', 
+                                      'address', 'city', 'state', 'department', 'position', 
+                                      'date_hired (YYYY-MM-DD)', 'employment_status (Active/On Leave/Suspended/Terminated)',
+                                      'bank_name', 'account_number', 'basic_salary']
+                    
+                    missing_fields = [field for field in required_fields if field not in row or not row[field]]
+                    if missing_fields:
+                        errors.append(f"Row {row_num}: Missing required fields: {', '.join(missing_fields)}")
+                        error_count += 1
+                        continue
+                    
+                    # Check for duplicate employee ID
+                    if Employee.query.filter_by(employee_id=row['employee_id']).first():
+                        errors.append(f"Row {row_num}: Employee ID already exists: {row['employee_id']}")
+                        duplicate_count += 1
+                        continue
+                        
+                    # Check for duplicate email
+                    if Employee.query.filter_by(email=row['email']).first():
+                        errors.append(f"Row {row_num}: Email already exists: {row['email']}")
+                        duplicate_count += 1
+                        continue
+                        
+                    # Validate and parse dates
+                    try:
+                        date_of_birth = datetime.strptime(row['date_of_birth (YYYY-MM-DD)'], '%Y-%m-%d').date()
+                        date_hired = datetime.strptime(row['date_hired (YYYY-MM-DD)'], '%Y-%m-%d').date()
+                    except ValueError:
+                        errors.append(f"Row {row_num}: Invalid date format. Use YYYY-MM-DD format.")
+                        error_count += 1
+                        continue
+                        
+                    # Validate age (must be at least 18)
+                    today = date.today()
+                    age = today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))
+                    if age < 18:
+                        errors.append(f"Row {row_num}: Employee must be at least 18 years old.")
+                        error_count += 1
+                        continue
+                        
+                    # Validate gender
+                    gender = row['gender (Male/Female/Other)']
+                    if gender not in ['Male', 'Female', 'Other']:
+                        errors.append(f"Row {row_num}: Invalid gender. Must be Male, Female, or Other.")
+                        error_count += 1
+                        continue
+                        
+                    # Validate marital status
+                    marital_status = row['marital_status (Single/Married/Divorced/Widowed)']
+                    if marital_status not in ['Single', 'Married', 'Divorced', 'Widowed']:
+                        errors.append(f"Row {row_num}: Invalid marital status. Must be Single, Married, Divorced, or Widowed.")
+                        error_count += 1
+                        continue
+                        
+                    # Validate employment status
+                    employment_status = row['employment_status (Active/On Leave/Suspended/Terminated)']
+                    if employment_status not in ['Active', 'On Leave', 'Suspended', 'Terminated']:
+                        errors.append(f"Row {row_num}: Invalid employment status. Must be Active, On Leave, Suspended, or Terminated.")
+                        error_count += 1
+                        continue
+                        
+                    # Validate state
+                    valid_states = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 
+                                   'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 
+                                   'FCT Abuja', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 
+                                   'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 
+                                   'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara']
+                    if row['state'] not in valid_states:
+                        errors.append(f"Row {row_num}: Invalid state. Must be one of the 36 Nigerian states or FCT Abuja.")
+                        error_count += 1
+                        continue
+                        
+                    # Validate basic salary
+                    try:
+                        basic_salary = float(row['basic_salary'])
+                        if basic_salary <= 0:
+                            errors.append(f"Row {row_num}: Basic salary must be greater than 0.")
+                            error_count += 1
+                            continue
+                    except ValueError:
+                        errors.append(f"Row {row_num}: Basic salary must be a valid number.")
+                        error_count += 1
+                        continue
+                        
+                    # Create new employee
+                    employee = Employee(
+                        employee_id=row['employee_id'],
+                        first_name=row['first_name'],
+                        last_name=row['last_name'],
+                        email=row['email'],
+                        phone_number=row['phone_number'],
+                        date_of_birth=date_of_birth,
+                        gender=gender,
+                        marital_status=marital_status,
+                        address=row['address'],
+                        city=row['city'],
+                        state=row['state'],
+                        department=row['department'],
+                        position=row['position'],
+                        date_hired=date_hired,
+                        employment_status=employment_status,
+                        bank_name=row['bank_name'],
+                        account_number=row['account_number'],
+                        tax_id=row.get('tax_id', ''),
+                        pension_id=row.get('pension_id', ''),
+                        nhf_id=row.get('nhf_id', ''),
+                        basic_salary=basic_salary
+                    )
+                    
+                    db.session.add(employee)
+                    success_count += 1
+                    
+                except Exception as e:
+                    errors.append(f"Row {row_num}: {str(e)}")
+                    error_count += 1
+                    
+            # Commit to database if there were successful entries
+            if success_count > 0:
+                db.session.commit()
+                
+            # Display results
+            if success_count > 0:
+                flash(f'Successfully added {success_count} employees.', 'success')
+            if error_count > 0 or duplicate_count > 0:
+                flash(f'Encountered {error_count} errors and {duplicate_count} duplicates.', 'warning')
+                return render_template('employees/bulk_upload.html', errors=errors)
+                
+            return redirect(url_for('employees.index'))
+                
+        except Exception as e:
+            flash(f'Error processing CSV file: {str(e)}', 'danger')
+            return redirect(request.url)
+    
+    return render_template('employees/bulk_upload.html')

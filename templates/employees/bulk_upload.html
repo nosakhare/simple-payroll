@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Upload Employees - Nigerian Payroll System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3"><i class="fas fa-file-upload me-2"></i> Bulk Upload Employees</h1>
+    <div>
+        <a href="{{ url_for('employees.download_csv_template') }}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-file-download me-1"></i> Download CSV Template
+        </a>
+        <a href="{{ url_for('employees.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Employees
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Upload Employee CSV File</h5>
+        
+        <div class="alert alert-info">
+            <h5><i class="fas fa-info-circle me-2"></i>Instructions</h5>
+            <ol>
+                <li>Download the CSV template using the button above.</li>
+                <li>Fill in employee information in the spreadsheet. Required fields are marked in the template.</li>
+                <li>Save the file as CSV format.</li>
+                <li>Upload the completed CSV file using the form below.</li>
+            </ol>
+            <p class="mb-0">
+                <strong>Note:</strong> The system will validate all entries before adding them to the database. 
+                Any rows with errors will be skipped, and valid entries will be processed.
+            </p>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" class="mt-4">
+            <div class="mb-3">
+                <label for="file" class="form-label">CSV File</label>
+                <input type="file" class="form-control" id="file" name="file" accept=".csv">
+                <div class="form-text">Only CSV files are accepted.</div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-upload me-1"></i> Upload and Process
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if errors %}
+<div class="card mt-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="card-title mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Upload Errors</h5>
+    </div>
+    <div class="card-body">
+        <p>The following errors were encountered during upload:</p>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for error in errors %}
+                    <tr>
+                        <td>{{ error }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="alert alert-warning mt-3">
+            Please correct these errors and try uploading again, or continue with the successfully imported employees.
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
