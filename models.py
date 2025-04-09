@@ -242,22 +242,32 @@ class PayrollItem(db.Model):
     employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
     basic_salary = db.Column(db.Float, nullable=False)
     
+    # Allowances
+    transport_allowance = db.Column(db.Float, nullable=False, default=0.0)
+    housing_allowance = db.Column(db.Float, nullable=False, default=0.0)
+    utility_allowance = db.Column(db.Float, nullable=False, default=0.0)
+    meal_allowance = db.Column(db.Float, nullable=False, default=0.0)
+    clothing_allowance = db.Column(db.Float, nullable=False, default=0.0)
+    
     # Computed amounts
     gross_pay = db.Column(db.Float, nullable=False)
     taxable_income = db.Column(db.Float, nullable=False)
-    tax_amount = db.Column(db.Float, nullable=False)
-    pension_amount = db.Column(db.Float, nullable=False)
-    nhf_amount = db.Column(db.Float, nullable=False)  # National Housing Fund
+    tax = db.Column(db.Float, nullable=False)  # Tax amount
+    pension = db.Column(db.Float, nullable=False, default=0.0)  # Pension deduction
+    nhf = db.Column(db.Float, nullable=False, default=0.0)  # National Housing Fund
     other_deductions = db.Column(db.Float, nullable=False, default=0.0)
     net_pay = db.Column(db.Float, nullable=False)
     
     # Flag to indicate if this item has been adjusted
     is_adjusted = db.Column(db.Boolean, default=False)
     
+    # User who created this record
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
     # JSON fields for detailed breakdown
-    allowances = db.Column(db.JSON, nullable=False, default=dict)
-    deductions = db.Column(db.JSON, nullable=False, default=dict)
-    tax_details = db.Column(db.JSON, nullable=False, default=dict)
+    allowances = db.Column(db.JSON, nullable=True)
+    deductions = db.Column(db.JSON, nullable=True)
+    tax_details = db.Column(db.JSON, nullable=True)
     
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     date_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -271,7 +281,7 @@ class PayrollItem(db.Model):
     def recalculate_net_pay(self):
         """Recalculate net pay after adjustments."""
         total_adjustments = sum(adj.amount for adj in self.adjustments)
-        self.net_pay = self.gross_pay - self.tax_amount - self.pension_amount - self.nhf_amount - self.other_deductions + total_adjustments
+        self.net_pay = self.gross_pay - self.tax - self.pension - self.nhf - self.other_deductions + total_adjustments
         return self.net_pay
 
 
