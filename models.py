@@ -120,7 +120,8 @@ class Payroll(db.Model):
     period_start = db.Column(db.Date, nullable=False)
     period_end = db.Column(db.Date, nullable=False)
     payment_date = db.Column(db.Date, nullable=False)
-    status = db.Column(db.String(20), nullable=False, default='Draft')  # Draft, Processing, Completed, Cancelled
+    status = db.Column(db.String(20), nullable=False, default='Draft')  # Draft, Active, Processing, Completed, Closed, Cancelled
+    is_active = db.Column(db.Boolean, default=False)  # Flag to indicate active payroll period
     total_basic_salary = db.Column(db.Float, default=0.0)
     total_allowances = db.Column(db.Float, default=0.0)
     total_deductions = db.Column(db.Float, default=0.0)
@@ -133,9 +134,54 @@ class Payroll(db.Model):
     # Relationships
     created_by = db.relationship('User', backref='payrolls')
     payroll_items = db.relationship('PayrollItem', backref='payroll', lazy=True)
+    adjustment_items = db.relationship('PayrollAdjustment', backref='payroll', lazy=True)
     
     def __repr__(self):
         return f'<Payroll {self.name} [{self.status}]>'
+        
+    @staticmethod
+    def check_for_overlap(start_date, end_date, exclude_id=None):
+        """
+        Check if there's any overlap with existing payroll periods.
+        Returns True if overlap exists, False otherwise.
+        """
+        query = Payroll.query.filter(
+            db.or_(
+                # New period starts during an existing period
+                db.and_(
+                    Payroll.period_start <= start_date,
+                    Payroll.period_end >= start_date
+                ),
+                # New period ends during an existing period
+                db.and_(
+                    Payroll.period_start <= end_date,
+                    Payroll.period_end >= end_date
+                ),
+                # New period completely contains an existing period
+                db.and_(
+                    Payroll.period_start >= start_date,
+                    Payroll.period_end <= end_date
+                )
+            )
+        )
+        
+        # Exclude the current payroll if updating
+        if exclude_id:
+            query = query.filter(Payroll.id != exclude_id)
+            
+        return query.first() is not None
+        
+    def get_payroll_status_display(self):
+        """Get a human-readable status for display purposes."""
+        status_map = {
+            'Draft': 'Draft',
+            'Active': 'Active (In Progress)',
+            'Processing': 'Processing',
+            'Completed': 'Completed',
+            'Closed': 'Closed',
+            'Cancelled': 'Cancelled'
+        }
+        return status_map.get(self.status, self.status)
 
 class CompensationHistory(db.Model):
     """Model for tracking employee compensation history and changes."""
@@ -205,6 +251,9 @@ class PayrollItem(db.Model):
     other_deductions = db.Column(db.Float, nullable=False, default=0.0)
     net_pay = db.Column(db.Float, nullable=False)
     
+    # Flag to indicate if this item has been adjusted
+    is_adjusted = db.Column(db.Boolean, default=False)
+    
     # JSON fields for detailed breakdown
     allowances = db.Column(db.JSON, nullable=False, default=dict)
     deductions = db.Column(db.JSON, nullable=False, default=dict)
@@ -213,5 +262,32 @@ class PayrollItem(db.Model):
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     date_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relationships
+    adjustments = db.relationship('PayrollAdjustment', backref='payroll_item', lazy=True)
+    
     def __repr__(self):
         return f'<PayrollItem {self.id} for Employee #{self.employee_id}>'
+        
+    def recalculate_net_pay(self):
+        """Recalculate net pay after adjustments."""
+        total_adjustments = sum(adj.amount for adj in self.adjustments)
+        self.net_pay = self.gross_pay - self.tax_amount - self.pension_amount - self.nhf_amount - self.other_deductions + total_adjustments
+        return self.net_pay
+
+
+class PayrollAdjustment(db.Model):
+    """Model for payroll adjustments (reimbursements, bonuses, or additional deductions)."""
+    id = db.Column(db.Integer, primary_key=True)
+    payroll_id = db.Column(db.Integer, db.ForeignKey('payroll.id'), nullable=False)
+    payroll_item_id = db.Column(db.Integer, db.ForeignKey('payroll_item.id'), nullable=False)
+    adjustment_type = db.Column(db.String(20), nullable=False)  # 'bonus', 'reimbursement', 'deduction'
+    description = db.Column(db.String(256), nullable=False)
+    amount = db.Column(db.Float, nullable=False)  # Positive for additions, negative for deductions
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    created_by = db.relationship('User', backref='payroll_adjustments')
+    
+    def __repr__(self):
+        return f'<PayrollAdjustment {self.id}: {self.adjustment_type} ₦{self.amount:,.2f}>'

@@ -48,14 +48,22 @@
                 <div class="mb-3">
                     {% if payroll.status == 'Draft' %}
                     <span class="badge bg-warning p-2">Draft</span>
+                    {% elif payroll.status == 'Active' %}
+                    <span class="badge bg-success p-2">Active</span>
                     {% elif payroll.status == 'Processing' %}
                     <span class="badge bg-info p-2">Processing</span>
                     {% elif payroll.status == 'Completed' %}
-                    <span class="badge bg-success p-2">Completed</span>
+                    <span class="badge bg-primary p-2">Completed</span>
+                    {% elif payroll.status == 'Closed' %}
+                    <span class="badge bg-secondary p-2">Closed</span>
                     {% elif payroll.status == 'Cancelled' %}
                     <span class="badge bg-danger p-2">Cancelled</span>
                     {% else %}
                     <span class="badge bg-secondary p-2">{{ payroll.status }}</span>
+                    {% endif %}
+                    
+                    {% if payroll.is_active %}
+                    <span class="badge bg-success p-2 ms-1">Current Active Period</span>
                     {% endif %}
                 </div>
                 <hr>
@@ -101,6 +109,27 @@
                     </div>
                 </form>
                 {% endif %}
+                
+                <!-- Status Management -->
+                {% if status_form %}
+                <hr>
+                <h6 class="text-muted mb-3">Change Payroll Status</h6>
+                <form method="post" action="{{ url_for('payroll.update_status') }}">
+                    {{ status_form.hidden_tag() }}
+                    {{ status_form.payroll_id }}
+                    <div class="form-group mb-3">
+                        <label for="{{ status_form.status.id }}" class="form-label">Status</label>
+                        {{ status_form.status(class="form-select") }}
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ status_form.confirm(class="form-check-input") }}
+                        {{ status_form.confirm.label(class="form-check-label") }}
+                    </div>
+                    <div class="d-grid">
+                        {{ status_form.submit(class="btn btn-secondary") }}
+                    </div>
+                </form>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -142,11 +171,21 @@
                                     <td>{{ format_currency(item.basic_salary) }}</td>
                                     <td>{{ format_currency(item.gross_pay) }}</td>
                                     <td>{{ format_currency(item.tax_amount + item.pension_amount + item.nhf_amount + item.other_deductions) }}</td>
-                                    <td class="fw-bold">{{ format_currency(item.net_pay) }}</td>
+                                    <td class="fw-bold">
+                                        {{ format_currency(item.net_pay) }}
+                                        {% if item.is_adjusted %}
+                                        <span class="badge bg-warning ms-1" title="This item has adjustments">Adjusted</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
-                                        <a href="{{ url_for('payroll.payslip', id=item.id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-file-invoice"></i> Payslip
-                                        </a>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('payroll.view_payroll_item', id=item.id) }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-info-circle"></i> Details
+                                            </a>
+                                            <a href="{{ url_for('payroll.payslip', id=item.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-file-invoice"></i> Payslip
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}

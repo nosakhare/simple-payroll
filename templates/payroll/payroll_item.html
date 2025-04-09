@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% block title %}Payroll Item Details{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('payroll.index') }}">Payrolls</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('payroll.view', id=payroll.id) }}">{{ payroll.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ employee.full_name() }}</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>Payroll Item Details</h1>
+                <div>
+                    <a href="{{ url_for('payroll.payslip', id=payroll_item.id) }}" class="btn btn-primary">
+                        <i class="bi bi-printer"></i> View Payslip
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Employee Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Employee ID:</div>
+                        <div class="col-md-8">{{ employee.employee_id }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Name:</div>
+                        <div class="col-md-8">{{ employee.full_name() }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Department:</div>
+                        <div class="col-md-8">{{ employee.department }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Position:</div>
+                        <div class="col-md-8">{{ employee.position }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Status:</div>
+                        <div class="col-md-8">{{ employee.employment_status }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Payroll Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Payroll:</div>
+                        <div class="col-md-8">{{ payroll.name }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Period:</div>
+                        <div class="col-md-8">{{ payroll.period_start.strftime('%d %b, %Y') }} - {{ payroll.period_end.strftime('%d %b, %Y') }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Payment Date:</div>
+                        <div class="col-md-8">{{ payroll.payment_date.strftime('%d %b, %Y') }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Status:</div>
+                        <div class="col-md-8">
+                            <span class="badge {% if payroll.status == 'Draft' %}bg-secondary{% elif payroll.status == 'Active' %}bg-success{% elif payroll.status == 'Processing' %}bg-warning{% elif payroll.status == 'Completed' %}bg-info{% elif payroll.status == 'Closed' %}bg-dark{% else %}bg-danger{% endif %}">
+                                {{ payroll.get_payroll_status_display() }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">Earnings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-6 fw-bold">Basic Salary:</div>
+                        <div class="col-md-6 text-end">{{ format_currency(payroll_item.basic_salary) }}</div>
+                    </div>
+                    
+                    {% set allowances = payroll_item.allowances|tojson|from_json %}
+                    {% for name, amount in allowances.items() %}
+                    <div class="row mb-2">
+                        <div class="col-md-6 fw-bold">{{ name }}:</div>
+                        <div class="col-md-6 text-end">{{ format_currency(amount) }}</div>
+                    </div>
+                    {% endfor %}
+                    
+                    <hr>
+                    <div class="row fw-bold">
+                        <div class="col-md-6">Gross Pay:</div>
+                        <div class="col-md-6 text-end">{{ format_currency(payroll_item.gross_pay) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">Deductions</h5>
+                </div>
+                <div class="card-body">
+                    {% set deductions = payroll_item.deductions|tojson|from_json %}
+                    {% for name, amount in deductions.items() %}
+                    <div class="row mb-2">
+                        <div class="col-md-6 fw-bold">{{ name }}:</div>
+                        <div class="col-md-6 text-end">{{ format_currency(amount) }}</div>
+                    </div>
+                    {% endfor %}
+                    
+                    <hr>
+                    <div class="row fw-bold">
+                        <div class="col-md-6">Total Standard Deductions:</div>
+                        <div class="col-md-6 text-end">{{ format_currency(payroll_item.tax_amount + payroll_item.pension_amount + payroll_item.nhf_amount) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header {% if payroll_item.is_adjusted %}bg-warning{% else %}bg-secondary{% endif %} text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Adjustments {% if payroll_item.is_adjusted %}(Modified){% endif %}</h5>
+                        {% if adjustments %}
+                        <span class="badge bg-white text-dark">{{ adjustments|length }} adjustment{{ 's' if adjustments|length != 1 }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if adjustments %}
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Added By</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for adjustment in adjustments %}
+                                <tr>
+                                    <td>
+                                        <span class="badge {% if adjustment.adjustment_type == 'bonus' %}bg-success{% elif adjustment.adjustment_type == 'reimbursement' %}bg-info{% else %}bg-danger{% endif %}">
+                                            {{ adjustment.adjustment_type|title }}
+                                        </span>
+                                    </td>
+                                    <td>{{ adjustment.description }}</td>
+                                    <td class="text-end">{{ format_currency(adjustment.amount) }}</td>
+                                    <td>{{ adjustment.created_by.username }}</td>
+                                    <td>{{ adjustment.date_created.strftime('%d %b, %Y %H:%M') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-dark">
+                                    <td colspan="2" class="fw-bold">Total Adjustments</td>
+                                    <td class="text-end fw-bold">{{ format_currency(payroll_item.net_pay - (payroll_item.gross_pay - payroll_item.tax_amount - payroll_item.pension_amount - payroll_item.nhf_amount - payroll_item.other_deductions)) }}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            No adjustments have been made to this payroll item.
+                        </div>
+                    {% endif %}
+                    
+                    {% if adjustment_form %}
+                    <hr>
+                    <h5 class="mb-3">Add New Adjustment</h5>
+                    <form method="post" action="{{ url_for('payroll.add_adjustment') }}">
+                        {{ adjustment_form.csrf_token }}
+                        {{ adjustment_form.payroll_id }}
+                        {{ adjustment_form.payroll_item_id }}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="{{ adjustment_form.adjustment_type.id }}" class="form-label">Type</label>
+                                    {{ adjustment_form.adjustment_type(class="form-select") }}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="{{ adjustment_form.amount.id }}" class="form-label">Amount</label>
+                                    {{ adjustment_form.amount(class="form-control", placeholder="0.00") }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ adjustment_form.description.id }}" class="form-label">Description</label>
+                                    {{ adjustment_form.description(class="form-control", rows=1, placeholder="Reason for adjustment") }}
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                {{ adjustment_form.submit(class="btn btn-primary w-100") }}
+                            </div>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 offset-md-6 mb-4">
+            <div class="card bg-dark text-white">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Pay Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-6 fw-bold">Gross Pay:</div>
+                        <div class="col-md-6 text-end">{{ format_currency(payroll_item.gross_pay) }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6 fw-bold">Total Deductions:</div>
+                        <div class="col-md-6 text-end">{{ format_currency(payroll_item.tax_amount + payroll_item.pension_amount + payroll_item.nhf_amount + payroll_item.other_deductions) }}</div>
+                    </div>
+                    
+                    {% if payroll_item.is_adjusted %}
+                    <div class="row mb-2">
+                        <div class="col-md-6 fw-bold">Adjustments:</div>
+                        <div class="col-md-6 text-end">{{ format_currency(payroll_item.net_pay - (payroll_item.gross_pay - payroll_item.tax_amount - payroll_item.pension_amount - payroll_item.nhf_amount - payroll_item.other_deductions)) }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6 fw-bold fs-5">Net Pay:</div>
+                        <div class="col-md-6 text-end fw-bold fs-5">{{ format_currency(payroll_item.net_pay) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

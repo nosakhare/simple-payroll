@@ -125,6 +125,45 @@
             </div>
         </div>
         
+        {% if payslip.has_adjustments %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="card-title mb-0">Adjustments</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for adjustment in payslip.adjustments %}
+                                    <tr>
+                                        <td>{{ adjustment.adjustment_type|title }}</td>
+                                        <td>{{ adjustment.description }}</td>
+                                        <td class="text-end">{{ format_currency(adjustment.amount) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    
+                                    <tr class="table-secondary">
+                                        <th colspan="2">Total Adjustments</th>
+                                        <th class="text-end">{{ format_currency(payslip.adjustment_totals.net_adjustments) }}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card bg-light">
@@ -133,11 +172,17 @@
                             <div class="col-md-8">
                                 <h5>Net Pay</h5>
                                 <h3 class="text-success">{{ format_currency(payslip.payroll_item.net_pay) }}</h3>
+                                {% if payslip.has_adjustments %}
+                                <p class="text-muted small mb-0">* Includes adjustments</p>
+                                {% endif %}
                             </div>
                             <div class="col-md-4 text-md-end">
                                 <div class="mt-2">
                                     <p class="mb-1"><strong>Gross Pay:</strong> {{ format_currency(payslip.payroll_item.gross_pay) }}</p>
                                     <p class="mb-1"><strong>Total Deductions:</strong> {{ format_currency(payslip.payroll_item.tax_amount + payslip.payroll_item.pension_amount + payslip.payroll_item.nhf_amount + payslip.payroll_item.other_deductions) }}</p>
+                                    {% if payslip.has_adjustments %}
+                                    <p class="mb-1"><strong>Adjustments:</strong> {{ format_currency(payslip.adjustment_totals.net_adjustments) }}</p>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

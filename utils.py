@@ -134,8 +134,13 @@ def process_payroll(payroll_id):
     4. Update the payroll totals
     """
     payroll = Payroll.query.get(payroll_id)
-    if not payroll or payroll.status != 'Draft':
-        return False, "Invalid payroll or payroll is not in draft status"
+    
+    # Check if payroll exists and is in an appropriate status
+    if not payroll:
+        return False, "Invalid payroll ID"
+    
+    if payroll.status not in ['Draft', 'Active']:
+        return False, f"Payroll is in '{payroll.status}' status and cannot be processed"
     
     # Get all active employees
     employees = Employee.query.filter_by(employment_status='Active').all()
@@ -165,6 +170,10 @@ def process_payroll(payroll_id):
         utility_percentage = salary_config.utility_allowance_percentage
         meal_percentage = salary_config.meal_allowance_percentage
         clothing_percentage = salary_config.clothing_allowance_percentage
+    
+    # Clear existing payroll items if re-processing
+    if payroll.status == 'Active':
+        PayrollItem.query.filter_by(payroll_id=payroll.id).delete()
     
     # Process each employee
     for employee in employees:
@@ -238,6 +247,7 @@ def process_payroll(payroll_id):
             nhf_amount=monthly_nhf,
             other_deductions=0.0,
             net_pay=monthly_net_pay,
+            is_adjusted=False,
             allowances=json.dumps({
                 'Housing Allowance': housing_allowance,
                 'Transport Allowance': transport_allowance,
@@ -284,7 +294,13 @@ def process_payroll(payroll_id):
     payroll.total_deductions = total_deductions
     payroll.total_tax = total_tax
     payroll.total_net_pay = total_net
-    payroll.status = 'Completed'
+    
+    # Update status based on current status
+    if payroll.status == 'Draft':
+        payroll.status = 'Active'
+    elif payroll.status == 'Active':
+        payroll.status = 'Processing'
+        
     payroll.date_updated = datetime.utcnow()
     
     # Commit changes to database
@@ -295,6 +311,7 @@ def process_payroll(payroll_id):
 def generate_payslip_data(payroll_item_id):
     """Generate data for a payslip based on a payroll item."""
     from app import db
+    from models import PayrollAdjustment
     
     # Get the payroll item
     payroll_item = PayrollItem.query.get(payroll_item_id)
@@ -305,10 +322,18 @@ def generate_payslip_data(payroll_item_id):
     employee = Employee.query.get(payroll_item.employee_id)
     payroll = Payroll.query.get(payroll_item.payroll_id)
     
+    # Get any adjustments for this payroll item
+    adjustments = PayrollAdjustment.query.filter_by(payroll_item_id=payroll_item_id).all()
+    
     # Parse JSON fields
     allowances = json.loads(payroll_item.allowances)
     deductions = json.loads(payroll_item.deductions)
     tax_details = json.loads(payroll_item.tax_details)
+    
+    # Calculate adjustment totals by type
+    bonuses = sum(adj.amount for adj in adjustments if adj.adjustment_type == 'bonus')
+    reimbursements = sum(adj.amount for adj in adjustments if adj.adjustment_type == 'reimbursement')
+    additional_deductions = sum(-adj.amount for adj in adjustments if adj.adjustment_type == 'deduction')  # Deductions are stored as negative values
     
     # Build payslip data
     payslip = {
@@ -318,6 +343,14 @@ def generate_payslip_data(payroll_item_id):
         'allowances': allowances,
         'deductions': deductions,
         'tax_details': tax_details,
+        'adjustments': adjustments,
+        'has_adjustments': len(adjustments) > 0,
+        'adjustment_totals': {
+            'bonuses': bonuses,
+            'reimbursements': reimbursements,
+            'additional_deductions': additional_deductions,
+            'net_adjustments': bonuses + reimbursements - additional_deductions
+        },
         'generated_on': datetime.utcnow().strftime('%d %B, %Y'),
         'payment_method': 'Bank Transfer',
     }

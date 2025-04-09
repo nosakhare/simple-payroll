@@ -117,12 +117,53 @@ class PayrollForm(FlaskForm):
     def validate_payment_date(self, field):
         if field.data < self.period_end.data:
             raise ValidationError('Payment date must be after end date')
+            
+    def validate(self):
+        """Custom validation to check for payroll period overlaps."""
+        from models import Payroll
+        
+        if not super().validate():
+            return False
+            
+        # Check for overlapping payroll periods
+        if Payroll.check_for_overlap(self.period_start.data, self.period_end.data):
+            self.period_start.errors.append("This period overlaps with an existing payroll period.")
+            return False
+            
+        return True
+
+class PayrollStatusForm(FlaskForm):
+    """Form for changing the status of a payroll period."""
+    payroll_id = HiddenField('Payroll ID', validators=[DataRequired()])
+    status = SelectField('Status', choices=[
+        ('Draft', 'Draft'),
+        ('Active', 'Active'),
+        ('Processing', 'Processing'),
+        ('Completed', 'Completed'),
+        ('Closed', 'Closed'),
+        ('Cancelled', 'Cancelled')
+    ], validators=[DataRequired()])
+    confirm = BooleanField('I confirm this status change', validators=[DataRequired()])
+    submit = SubmitField('Update Status')
 
 class PayrollProcessForm(FlaskForm):
     """Form for processing a payroll."""
     payroll_id = HiddenField('Payroll ID', validators=[DataRequired()])
     confirm = BooleanField('I confirm that all the information is correct', validators=[DataRequired()])
     submit = SubmitField('Process Payroll')
+    
+class PayrollAdjustmentForm(FlaskForm):
+    """Form for adding adjustments to a payroll item."""
+    payroll_id = HiddenField('Payroll ID', validators=[DataRequired()])
+    payroll_item_id = HiddenField('Payroll Item ID', validators=[DataRequired()])
+    adjustment_type = SelectField('Adjustment Type', choices=[
+        ('bonus', 'Bonus'),
+        ('reimbursement', 'Reimbursement'),
+        ('deduction', 'Deduction')
+    ], validators=[DataRequired()])
+    description = TextAreaField('Description', validators=[DataRequired(), Length(max=256)])
+    amount = FloatField('Amount (₦)', validators=[DataRequired(), NumberRange(min=0.01)])
+    submit = SubmitField('Add Adjustment')
 
 class TaxBracketForm(FlaskForm):
     """Form for adding or editing tax brackets."""
