@@ -211,9 +211,9 @@
                 
                 <div class="col-md-6 mb-3">
                     <div class="form-group">
-                        {{ form.bank_name.label(class="form-label") }}
-                        {{ form.bank_name(class="form-control" + (" is-invalid" if form.bank_name.errors else "")) }}
-                        {% for error in form.bank_name.errors %}
+                        {{ form.bank_id.label(class="form-label") }}
+                        {{ form.bank_id(class="form-control" + (" is-invalid" if form.bank_id.errors else "")) }}
+                        {% for error in form.bank_id.errors %}
                         <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
