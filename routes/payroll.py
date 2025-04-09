@@ -195,12 +195,18 @@ def update_status():
 @login_required
 def view_payroll_item(id):
     """View and manage a specific payroll item."""
+    import json
     payroll_item = PayrollItem.query.get_or_404(id)
     payroll = Payroll.query.get_or_404(payroll_item.payroll_id)
     employee = Employee.query.get_or_404(payroll_item.employee_id)
     
     # Get all adjustments for this payroll item
     adjustments = PayrollAdjustment.query.filter_by(payroll_item_id=id).order_by(PayrollAdjustment.date_created.desc()).all()
+    
+    # Parse JSON fields from the payroll item
+    allowances_dict = json.loads(payroll_item.allowances) if payroll_item.allowances else {}
+    deductions_dict = json.loads(payroll_item.deductions) if payroll_item.deductions else {}
+    tax_details_dict = json.loads(payroll_item.tax_details) if payroll_item.tax_details else {}
     
     # Create a new adjustment form if the payroll is in an editable state
     adjustment_form = None
@@ -216,6 +222,9 @@ def view_payroll_item(id):
         employee=employee,
         adjustments=adjustments,
         adjustment_form=adjustment_form,
+        allowances=allowances_dict,
+        deductions=deductions_dict,
+        tax_details=tax_details_dict,
         format_currency=format_currency
     )
 

@@ -107,7 +107,6 @@
                         <div class="col-md-6 text-end">{{ format_currency(payroll_item.basic_salary) }}</div>
                     </div>
                     
-                    {% set allowances = payroll_item.allowances|tojson|from_json %}
                     {% for name, amount in allowances.items() %}
                     <div class="row mb-2">
                         <div class="col-md-6 fw-bold">{{ name }}:</div>
@@ -130,7 +129,6 @@
                     <h5 class="card-title mb-0">Deductions</h5>
                 </div>
                 <div class="card-body">
-                    {% set deductions = payroll_item.deductions|tojson|from_json %}
                     {% for name, amount in deductions.items() %}
                     <div class="row mb-2">
                         <div class="col-md-6 fw-bold">{{ name }}:</div>
