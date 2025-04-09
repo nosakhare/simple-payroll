@@ -152,7 +152,7 @@
                                     {% endfor %}
                                     
                                     <tr class="table-secondary">
-                                        <th colspan="2">Total Adjustments</th>
+                                        <th colspan="2">Net Adjustments</th>
                                         <th class="text-end">{{ format_currency(payslip.adjustment_totals.net_adjustments) }}</th>
                                     </tr>
                                 </tbody>
@@ -181,7 +181,7 @@
                                     <p class="mb-1"><strong>Gross Pay:</strong> {{ format_currency(payslip.payroll_item.gross_pay) }}</p>
                                     <p class="mb-1"><strong>Total Deductions:</strong> {{ format_currency(payslip.payroll_item.tax_amount + payslip.payroll_item.pension_amount + payslip.payroll_item.nhf_amount + payslip.payroll_item.other_deductions) }}</p>
                                     {% if payslip.has_adjustments %}
-                                    <p class="mb-1"><strong>Adjustments:</strong> {{ format_currency(payslip.adjustment_totals.net_adjustments) }}</p>
+                                    <p class="mb-1"><strong>Positive Adjustments:</strong> {{ format_currency(payslip.adjustment_totals.positive_adjustments) }}</p>
                                     {% endif %}
                                 </div>
                             </div>

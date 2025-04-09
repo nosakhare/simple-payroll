@@ -271,8 +271,21 @@ class PayrollItem(db.Model):
         
     def recalculate_net_pay(self):
         """Recalculate net pay after adjustments."""
-        total_adjustments = sum(adj.amount for adj in self.adjustments)
-        self.net_pay = self.gross_pay - self.tax_amount - self.pension_amount - self.nhf_amount - self.other_deductions + total_adjustments
+        # Calculate total positive adjustments (bonuses and reimbursements)
+        positive_adjustments = sum(adj.amount for adj in self.adjustments 
+                                if adj.adjustment_type in ['bonus', 'reimbursement'])
+        
+        # Calculate total negative adjustments (deductions)
+        negative_adjustments = sum(adj.amount for adj in self.adjustments 
+                                if adj.adjustment_type == 'deduction')
+        
+        # Calculate total deductions
+        total_deductions = (self.tax_amount + self.pension_amount + 
+                            self.nhf_amount + self.other_deductions - negative_adjustments)
+        
+        # Net Pay = Gross Pay + Positive Adjustments - Total Deductions
+        self.net_pay = self.gross_pay + positive_adjustments - total_deductions
+        
         return self.net_pay
 
 

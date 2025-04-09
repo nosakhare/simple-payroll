@@ -334,6 +334,9 @@ def generate_payslip_data(payroll_item_id):
     reimbursements = sum(adj.amount for adj in adjustments if adj.adjustment_type == 'reimbursement')
     additional_deductions = sum(-adj.amount for adj in adjustments if adj.adjustment_type == 'deduction')  # Deductions are stored as negative values
     
+    # Calculate total positive adjustments (bonuses and reimbursements)
+    positive_adjustments = bonuses + reimbursements
+    
     # Build payslip data
     payslip = {
         'payroll_item': payroll_item,
@@ -348,7 +351,8 @@ def generate_payslip_data(payroll_item_id):
             'bonuses': bonuses,
             'reimbursements': reimbursements,
             'additional_deductions': additional_deductions,
-            'net_adjustments': bonuses + reimbursements - additional_deductions
+            'positive_adjustments': positive_adjustments,
+            'net_adjustments': positive_adjustments - additional_deductions
         },
         'generated_on': datetime.utcnow().strftime('%d %B, %Y'),
         'payment_method': 'Bank Transfer',

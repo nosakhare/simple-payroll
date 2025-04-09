@@ -267,7 +267,7 @@
                                     <p class="mb-1">Gross Pay:</p>
                                     <p class="mb-1">Total Deductions:</p>
                                     {% if payroll_item.is_adjusted %}
-                                    <p class="mb-1">Adjustments:</p>
+                                    <p class="mb-1">Positive Adjustments:</p>
                                     {% endif %}
                                     <p class="mb-0 fw-bold">Net Pay:</p>
                                 </div>
@@ -275,7 +275,13 @@
                                     <p class="mb-1">{{ format_currency(payroll_item.gross_pay) }}</p>
                                     <p class="mb-1">{{ format_currency(payroll_item.tax_amount + payroll_item.pension_amount + payroll_item.nhf_amount + payroll_item.other_deductions) }}</p>
                                     {% if payroll_item.is_adjusted %}
-                                    <p class="mb-1">{{ format_currency(payroll_item.net_pay - (payroll_item.gross_pay - payroll_item.tax_amount - payroll_item.pension_amount - payroll_item.nhf_amount - payroll_item.other_deductions)) }}</p>
+                                    {% set positive_adjustments = 0 %}
+                                    {% for adj in payroll_item.adjustments %}
+                                        {% if adj.adjustment_type in ['bonus', 'reimbursement'] %}
+                                            {% set positive_adjustments = positive_adjustments + adj.amount %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <p class="mb-1">{{ format_currency(positive_adjustments) }}</p>
                                     {% endif %}
                                     <p class="mb-0 fw-bold">{{ format_currency(payroll_item.net_pay) }}</p>
                                 </div>

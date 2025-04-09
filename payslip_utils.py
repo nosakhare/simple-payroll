@@ -308,8 +308,9 @@ def create_payslip_pdf(payroll_item_id, user_id):
     net_pay_data.append(["Gross Pay", format_currency(payroll_item.gross_pay)])
     net_pay_data.append(["Total Deductions", format_currency(total_deductions)])
     
-    if payslip_data['has_adjustments'] and payslip_data['adjustment_totals']['net_adjustments'] != 0:
-        net_pay_data.append(["Adjustments", format_currency(payslip_data['adjustment_totals']['net_adjustments'])])
+    # Display positive adjustments (bonuses and reimbursements) if any
+    if payslip_data['has_adjustments'] and payslip_data['adjustment_totals']['positive_adjustments'] > 0:
+        net_pay_data.append(["Positive Adjustments", format_currency(payslip_data['adjustment_totals']['positive_adjustments'])])
     
     net_pay_data.append(["Net Pay", format_currency(payroll_item.net_pay)])
     
