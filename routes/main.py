@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
 from models import Employee, Payroll
+from utils import format_currency
 
 main = Blueprint('main', __name__)
 
@@ -37,5 +38,6 @@ def dashboard():
         recent_payrolls=recent_payrolls,
         total_payroll=total_payroll,
         draft_count=draft_count,
-        completed_count=completed_count
+        completed_count=completed_count,
+        format_currency=format_currency
     )
