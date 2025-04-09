@@ -46,6 +46,7 @@ def create_app(config_class=Config):
     from routes.payroll import payroll as payroll_bp
     from routes.configuration import configuration as configuration_bp
     from routes.calculator import calculator as calculator_bp
+    from routes.test import test as test_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -53,6 +54,7 @@ def create_app(config_class=Config):
     app.register_blueprint(payroll_bp, url_prefix='/payroll')
     app.register_blueprint(configuration_bp, url_prefix='/configuration')
     app.register_blueprint(calculator_bp, url_prefix='/calculator')
+    app.register_blueprint(test_bp, url_prefix='/test')
     
     return app
 

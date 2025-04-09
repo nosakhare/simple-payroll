@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Page - Nigerian Payroll System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Payroll System Test Page</h1>
+            <p class="lead">Use this page to test the payroll system functionality without login.</p>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Test Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-column gap-2">
+                        <button id="create-test-data" class="btn btn-primary">1. Create Test Data</button>
+                        <button id="process-test-payroll" class="btn btn-success">2. Process Test Payroll</button>
+                        <button id="add-test-adjustment" class="btn btn-warning" disabled>3. Add Test Adjustment</button>
+                        <button id="view-test-payslip" class="btn btn-info" disabled>4. View Test Payslip</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0">Results</h5>
+                </div>
+                <div class="card-body">
+                    <div id="results" class="border p-3 bg-light overflow-auto" style="min-height: 200px; max-height: 400px;">
+                        <p class="text-muted">Click on the buttons above to start testing...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let payrollId = null;
+
+    // Helper function to add a message to the results
+    function addMessage(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const results = document.getElementById('results');
+        const messageEl = document.createElement('div');
+        messageEl.className = `alert alert-${type} mb-2`;
+        messageEl.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+        results.appendChild(messageEl);
+        results.scrollTop = results.scrollHeight;
+    }
+    
+    // Create test data
+    document.getElementById('create-test-data').addEventListener('click', async function() {
+        addMessage('Creating test data...', 'info');
+        try {
+            const response = await fetch('/test/create-test-data');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                addMessage(`${data.message}: ${JSON.stringify(data.data)}`, 'success');
+                document.getElementById('process-test-payroll').disabled = false;
+            } else {
+                addMessage(`Error: ${data.message}`, 'danger');
+            }
+        } catch (error) {
+            addMessage(`Error: ${error.message}`, 'danger');
+        }
+    });
+    
+    // Process test payroll
+    document.getElementById('process-test-payroll').addEventListener('click', async function() {
+        addMessage('Processing test payroll...', 'info');
+        try {
+            const response = await fetch('/test/process-test-payroll');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                payrollId = data.payroll_id;
+                addMessage(`${data.message}. Payroll ID: ${payrollId}`, 'success');
+                document.getElementById('add-test-adjustment').disabled = false;
+                document.getElementById('view-test-payslip').disabled = false;
+            } else {
+                addMessage(`Error: ${data.message}`, 'danger');
+            }
+        } catch (error) {
+            addMessage(`Error: ${error.message}`, 'danger');
+        }
+    });
+    
+    // Add test adjustment
+    document.getElementById('add-test-adjustment').addEventListener('click', async function() {
+        if (!payrollId) {
+            addMessage('No payroll processed yet. Please process a payroll first.', 'warning');
+            return;
+        }
+        
+        addMessage('Adding test adjustment...', 'info');
+        try {
+            const response = await fetch(`/test/add-test-adjustment/${payrollId}`);
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                addMessage(`${data.message}: ${JSON.stringify(data.adjustment)}`, 'success');
+            } else {
+                addMessage(`Error: ${data.message}`, 'danger');
+            }
+        } catch (error) {
+            addMessage(`Error: ${error.message}`, 'danger');
+        }
+    });
+    
+    // View test payslip
+    document.getElementById('view-test-payslip').addEventListener('click', function() {
+        if (!payrollId) {
+            addMessage('No payroll processed yet. Please process a payroll first.', 'warning');
+            return;
+        }
+        
+        addMessage('Opening test payslip in a new tab...', 'info');
+        window.open(`/test/view-test-payslip/${payrollId}`, '_blank');
+    });
+</script>
+{% endblock %}
