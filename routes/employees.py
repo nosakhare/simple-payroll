@@ -83,6 +83,7 @@ def create():
             position=form.position.data,
             date_hired=form.date_hired.data,
             employment_status=form.employment_status.data,
+            is_contract=form.is_contract.data,
             bank_name=form.bank_name.data,
             account_number=form.account_number.data,
             tax_id=form.tax_id.data,
@@ -147,6 +148,7 @@ def edit(id):
         employee.position = form.position.data
         employee.date_hired = form.date_hired.data
         employee.employment_status = form.employment_status.data
+        employee.is_contract = form.is_contract.data
         employee.bank_name = form.bank_name.data
         employee.account_number = form.account_number.data
         employee.tax_id = form.tax_id.data
@@ -249,6 +251,7 @@ def download_csv_template():
         # Employment Details
         'department', 'position', 'date_hired (YYYY-MM-DD)', 
         'employment_status (Active/On Leave/Suspended/Terminated)',
+        'is_contract (Yes/No)',
         
         # Bank Details
         'bank_name', 'account_number',
@@ -375,6 +378,15 @@ def bulk_upload():
                         error_count += 1
                         continue
                         
+                    # Validate contract status
+                    is_contract = False
+                    if 'is_contract (Yes/No)' in row:
+                        if row['is_contract (Yes/No)'] not in ['Yes', 'No', '']:
+                            errors.append(f"Row {row_num}: Invalid contract status. Must be Yes or No.")
+                            error_count += 1
+                            continue
+                        is_contract = row['is_contract (Yes/No)'] == 'Yes'
+                        
                     # Validate state
                     valid_states = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 
                                    'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 
@@ -415,6 +427,7 @@ def bulk_upload():
                         position=row['position'],
                         date_hired=date_hired,
                         employment_status=employment_status,
+                        is_contract=is_contract,
                         bank_name=row['bank_name'],
                         account_number=row['account_number'],
                         tax_id=row.get('tax_id', ''),

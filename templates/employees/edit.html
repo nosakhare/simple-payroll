@@ -184,6 +184,14 @@
                 </div>
                 
                 <div class="col-md-3 mb-3">
+                    <div class="form-check mt-4">
+                        {{ form.is_contract(class="form-check-input") }}
+                        {{ form.is_contract.label(class="form-check-label") }}
+                        <div class="form-text text-muted">Contract employees are exempt from pension contributions</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
                     <div class="form-group">
                         {{ form.basic_salary.label(class="form-label") }}
                         {{ form.basic_salary(class="form-control" + (" is-invalid" if form.basic_salary.errors else ""), type="number", step="0.01") }}

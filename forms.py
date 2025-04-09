@@ -77,6 +77,7 @@ class EmployeeForm(FlaskForm):
         ('Suspended', 'Suspended'),
         ('Terminated', 'Terminated')
     ], validators=[DataRequired()])
+    is_contract = BooleanField('Contract Employee')
     
     # Bank Details
     bank_name = StringField('Bank Name', validators=[DataRequired(), Length(max=64)])

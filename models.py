@@ -50,6 +50,7 @@ class Employee(db.Model):
     position = db.Column(db.String(64), nullable=False)
     date_hired = db.Column(db.Date, nullable=False)
     employment_status = db.Column(db.String(20), nullable=False, default='Active')
+    is_contract = db.Column(db.Boolean, default=False, nullable=False)
     
     # Bank details
     bank_name = db.Column(db.String(64), nullable=False)

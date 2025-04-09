@@ -65,6 +65,10 @@
                     {% else %}
                     <span class="badge bg-secondary p-2">{{ employee.employment_status }}</span>
                     {% endif %}
+                    
+                    {% if employee.is_contract %}
+                    <span class="badge bg-dark p-2 ms-2">Contract</span>
+                    {% endif %}
                 </div>
                 <hr>
                 <div class="text-start">
