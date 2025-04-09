@@ -360,6 +360,88 @@ def generate_payslip_data(payroll_item_id):
     
     return payslip
 
+def generate_payment_schedule(payroll_id, user_id=None):
+    """
+    Generate a payment schedule for a specific payroll run.
+    
+    This will:
+    1. Get all payroll items for the specified payroll
+    2. Create a payment schedule record
+    3. Create payment schedule items for each payroll item
+    4. Return the generated payment schedule
+    """
+    from app import db
+    from models import Payroll, PayrollItem, PaymentSchedule, PaymentScheduleItem
+    
+    payroll = Payroll.query.get(payroll_id)
+    
+    # Check if payroll exists and is in the correct status
+    if not payroll:
+        return False, "Invalid payroll ID"
+    
+    if payroll.status != 'Processing':
+        return False, f"Payroll is in '{payroll.status}' status and cannot generate payment schedule"
+    
+    # Get all payroll items for this payroll
+    payroll_items = PayrollItem.query.filter_by(payroll_id=payroll_id).all()
+    
+    if not payroll_items:
+        return False, "No payroll items found for this payroll"
+    
+    # Create a new payment schedule
+    payment_schedule = PaymentSchedule(
+        payroll_id=payroll_id,
+        generated_date=datetime.utcnow(),
+        is_generated=True,
+        created_by_id=user_id
+    )
+    
+    db.session.add(payment_schedule)
+    db.session.flush()  # Get the payment_schedule.id
+    
+    # Process each payroll item
+    for item in payroll_items:
+        # Get employee information
+        employee = item.employee
+        
+        # Skip if employee doesn't have bank details
+        if not employee.account_number:
+            continue
+            
+        # Determine bank code - use the one from the bank model if available
+        bank_code = None
+        bank_name = "Unknown Bank"
+        
+        if employee.bank:
+            bank_code = employee.bank.bank_code
+            bank_name = employee.bank.name
+        elif employee.bank_name:
+            # Fallback to the stored bank name if no bank relationship
+            bank_name = employee.bank_name
+        
+        if not bank_code:
+            continue  # Skip if no bank code available
+        
+        # Create payment schedule item
+        payment_item = PaymentScheduleItem(
+            payment_schedule_id=payment_schedule.id,
+            payroll_item_id=item.id,
+            account_name=f"{employee.first_name} {employee.last_name}",
+            account_number=employee.account_number,
+            bank_code=bank_code,
+            bank_name=bank_name,
+            amount=item.net_pay,
+            status='Pending'
+        )
+        
+        db.session.add(payment_item)
+    
+    # Commit to database
+    db.session.commit()
+    
+    return True, payment_schedule
+
+
 def count_working_days(start_date, end_date):
     """
     Count working days (Monday-Friday) between two dates, inclusive.

@@ -53,7 +53,8 @@ class Employee(db.Model):
     is_contract = db.Column(db.Boolean, default=False, nullable=False)
     
     # Bank details
-    bank_name = db.Column(db.String(64), nullable=False)
+    bank_id = db.Column(db.Integer, db.ForeignKey('bank.id'), nullable=True)
+    bank_name = db.Column(db.String(64), nullable=True)  # Keep for backward compatibility
     account_number = db.Column(db.String(20), nullable=False)
     
     # Tax information
@@ -113,6 +114,45 @@ class DeductionType(db.Model):
     
     def __repr__(self):
         return f'<DeductionType {self.name}>'
+
+class PaymentSchedule(db.Model):
+    """Model for storing payment schedule details for bulk transfers."""
+    id = db.Column(db.Integer, primary_key=True)
+    payroll_id = db.Column(db.Integer, db.ForeignKey('payroll.id'), nullable=False)
+    generated_date = db.Column(db.DateTime, default=datetime.utcnow)
+    file_data = db.Column(db.LargeBinary, nullable=True)  # Store the file binary data if needed
+    filename = db.Column(db.String(256), nullable=True)
+    is_generated = db.Column(db.Boolean, default=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    # Relationships
+    payroll = db.relationship('Payroll', backref='payment_schedules')
+    created_by = db.relationship('User', backref='generated_payment_schedules')
+    payment_items = db.relationship('PaymentScheduleItem', backref='payment_schedule', lazy=True)
+    
+    def __repr__(self):
+        return f'<PaymentSchedule {self.id} for Payroll #{self.payroll_id}>'
+
+
+class PaymentScheduleItem(db.Model):
+    """Model for individual items in a payment schedule."""
+    id = db.Column(db.Integer, primary_key=True)
+    payment_schedule_id = db.Column(db.Integer, db.ForeignKey('payment_schedule.id'), nullable=False)
+    payroll_item_id = db.Column(db.Integer, db.ForeignKey('payroll_item.id'), nullable=False)
+    account_name = db.Column(db.String(128), nullable=False)
+    account_number = db.Column(db.String(20), nullable=False)
+    bank_code = db.Column(db.String(10), nullable=False)
+    bank_name = db.Column(db.String(128), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='Pending')  # Pending, Processed, Failed
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    payroll_item = db.relationship('PayrollItem', backref='payment_schedule_items')
+    
+    def __repr__(self):
+        return f'<PaymentScheduleItem {self.id} for {self.account_name} - {self.account_number}>'
+
 
 class Payroll(db.Model):
     """Payroll model representing a payroll run for a specific period."""
@@ -326,6 +366,19 @@ class Payslip(db.Model):
     
     def __repr__(self):
         return f'<Payslip {self.id} for PayrollItem #{self.payroll_item_id}>'
+
+
+class Bank(db.Model):
+    """Model for storing Nigerian banks and their corresponding bank codes."""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False, unique=True)
+    bank_code = db.Column(db.String(10), nullable=False, unique=True)
+    
+    # Relationships
+    employees = db.relationship('Employee', backref='bank', lazy=True)
+    
+    def __repr__(self):
+        return f'<Bank {self.name} ({self.bank_code})>'
 
 
 class EmailLog(db.Model):

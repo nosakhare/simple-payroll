@@ -1,14 +1,15 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, Response
 from flask_login import login_required, current_user
 from datetime import datetime
+import csv, io
 
 from app import db
-from models import Payroll, PayrollItem, Employee, PayrollAdjustment
+from models import Payroll, PayrollItem, Employee, PayrollAdjustment, PaymentSchedule, PaymentScheduleItem
 from forms import (
     PayrollForm, PayrollProcessForm, PayrollStatusForm, 
     PayrollAdjustmentForm
 )
-from utils import format_currency, process_payroll, generate_payslip_data
+from utils import format_currency, process_payroll, generate_payslip_data, generate_payment_schedule
 
 payroll = Blueprint('payroll', __name__)
 
@@ -185,6 +186,14 @@ def update_status():
         payroll.date_updated = datetime.utcnow()
         db.session.commit()
         
+        # If status is changed to Processing, generate payment schedule
+        if new_status == 'Processing' and old_status != 'Processing':
+            success, result = generate_payment_schedule(payroll_id, current_user.id)
+            if success:
+                flash(f'Payment schedule generated successfully for {len(result.payment_items)} employees.', 'success')
+            else:
+                flash(f'Error generating payment schedule: {result}', 'warning')
+        
         flash(f'Payroll status updated from {old_status} to {new_status}.', 'success')
         return redirect(url_for('payroll.view', id=payroll_id))
     
@@ -303,4 +312,83 @@ def payslip(id):
         'payroll/payslip.html',
         payslip=payslip_data,
         format_currency=format_currency
+    )
+    
+@payroll.route('/payment-schedule/<int:id>')
+@login_required
+def payment_schedule(id):
+    """View and manage payment schedule for a payroll."""
+    payroll = Payroll.query.get_or_404(id)
+    
+    # Get the latest payment schedule for this payroll
+    payment_schedule = PaymentSchedule.query.filter_by(payroll_id=id).order_by(PaymentSchedule.generated_date.desc()).first()
+    
+    if not payment_schedule:
+        flash('No payment schedule found for this payroll.', 'warning')
+        return redirect(url_for('payroll.view', id=id))
+    
+    # Get payment items
+    payment_items = PaymentScheduleItem.query.filter_by(payment_schedule_id=payment_schedule.id).all()
+    
+    return render_template(
+        'payroll/payment_schedule.html',
+        payroll=payroll,
+        payment_schedule=payment_schedule,
+        payment_items=payment_items,
+        format_currency=format_currency
+    )
+    
+@payroll.route('/download-payment-schedule/<int:id>')
+@login_required
+def download_payment_schedule(id):
+    """Download payment schedule CSV for a payroll."""
+    payroll = Payroll.query.get_or_404(id)
+    
+    # Get the latest payment schedule for this payroll
+    payment_schedule = PaymentSchedule.query.filter_by(payroll_id=id).order_by(PaymentSchedule.generated_date.desc()).first()
+    
+    if not payment_schedule:
+        flash('No payment schedule found for this payroll.', 'warning')
+        return redirect(url_for('payroll.view', id=id))
+    
+    # Get payment items
+    payment_items = PaymentScheduleItem.query.filter_by(payment_schedule_id=payment_schedule.id).all()
+    
+    # Create CSV data
+    csv_data = io.StringIO()
+    writer = csv.writer(csv_data)
+    
+    # Write headers (format based on the bulk list template)
+    headers = [
+        "Account Name", "Account Number", "Bank Code", "Bank Name", "Amount", "Narration"
+    ]
+    writer.writerow(headers)
+    
+    # Write data rows
+    for item in payment_items:
+        narration = f"Salary payment for {payroll.name}"
+        writer.writerow([
+            item.account_name,
+            item.account_number,
+            item.bank_code,
+            item.bank_name,
+            item.amount,
+            narration
+        ])
+    
+    # Reset pointer to beginning of file
+    csv_data.seek(0)
+    
+    # Generate a filename with date
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    safe_payroll_name = payroll.name.replace(' ', '_').replace('/', '_')
+    filename = f"payment_schedule_{safe_payroll_name}_{timestamp}.csv"
+    
+    # Create response
+    return Response(
+        csv_data.getvalue(),
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': f'attachment; filename="{filename}"'
+        }
     )

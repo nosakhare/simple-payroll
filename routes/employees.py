@@ -6,7 +6,7 @@ import csv, io, codecs
 from werkzeug.utils import secure_filename
 
 from app import db
-from models import Employee, CompensationHistory
+from models import Employee, CompensationHistory, Bank
 from forms import EmployeeForm, SearchForm, CompensationChangeForm
 from utils import format_currency
 
@@ -53,6 +53,10 @@ def create():
     """Create a new employee."""
     form = EmployeeForm()
     
+    # Populate bank dropdown
+    banks = Bank.query.order_by(Bank.name).all()
+    form.bank_id.choices = [(bank.id, f"{bank.name} ({bank.bank_code})") for bank in banks]
+    
     if form.validate_on_submit():
         # Check if employee ID already exists
         existing_employee = Employee.query.filter_by(employee_id=form.employee_id.data).first()
@@ -65,6 +69,10 @@ def create():
         if existing_email:
             flash('Email already exists. Please use a different email address.', 'danger')
             return render_template('employees/create.html', form=form)
+        
+        # Get bank name for the record
+        bank = Bank.query.get(form.bank_id.data)
+        bank_name = bank.name if bank else None
         
         # Create new employee
         employee = Employee(
@@ -84,7 +92,8 @@ def create():
             date_hired=form.date_hired.data,
             employment_status=form.employment_status.data,
             is_contract=form.is_contract.data,
-            bank_name=form.bank_name.data,
+            bank_id=form.bank_id.data,
+            bank_name=bank_name,
             account_number=form.account_number.data,
             tax_id=form.tax_id.data,
             pension_id=form.pension_id.data,
@@ -106,6 +115,14 @@ def edit(id):
     """Edit an existing employee."""
     employee = Employee.query.get_or_404(id)
     form = EmployeeForm(obj=employee)
+    
+    # Populate bank dropdown
+    banks = Bank.query.order_by(Bank.name).all()
+    form.bank_id.choices = [(bank.id, f"{bank.name} ({bank.bank_code})") for bank in banks]
+    
+    # Set current bank if employee has one
+    if not form.is_submitted() and employee.bank_id:
+        form.bank_id.data = employee.bank_id
     
     if form.validate_on_submit():
         # Check if employee ID already exists and is not this employee
@@ -132,6 +149,10 @@ def edit(id):
             )
             db.session.add(compensation_history)
         
+        # Get bank name for the record
+        bank = Bank.query.get(form.bank_id.data)
+        bank_name = bank.name if bank else None
+        
         # Update employee
         employee.employee_id = form.employee_id.data
         employee.first_name = form.first_name.data
@@ -149,7 +170,8 @@ def edit(id):
         employee.date_hired = form.date_hired.data
         employee.employment_status = form.employment_status.data
         employee.is_contract = form.is_contract.data
-        employee.bank_name = form.bank_name.data
+        employee.bank_id = form.bank_id.data
+        employee.bank_name = bank_name
         employee.account_number = form.account_number.data
         employee.tax_id = form.tax_id.data
         employee.pension_id = form.pension_id.data
@@ -428,6 +450,7 @@ def bulk_upload():
                         date_hired=date_hired,
                         employment_status=employment_status,
                         is_contract=is_contract,
+                        # Find bank by name or create it with empty code for migration
                         bank_name=row['bank_name'],
                         account_number=row['account_number'],
                         tax_id=row.get('tax_id', ''),

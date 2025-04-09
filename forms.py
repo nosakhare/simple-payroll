@@ -80,7 +80,7 @@ class EmployeeForm(FlaskForm):
     is_contract = BooleanField('Contract Employee')
     
     # Bank Details
-    bank_name = StringField('Bank Name', validators=[DataRequired(), Length(max=64)])
+    bank_id = SelectField('Bank', coerce=int, validators=[DataRequired()])
     account_number = StringField('Account Number', validators=[DataRequired(), Length(max=20)])
     
     # Tax Information
