@@ -101,10 +101,12 @@ def create_payslip_pdf(payroll_item_id, user_id):
     ))
     styles.add(ParagraphStyle(
         name='FooterText', 
-        fontName='Helvetica-Italic', 
+        fontName='Helvetica', 
         fontSize=8, 
         alignment=1,
-        textColor=colors.gray
+        textColor=colors.gray,
+        # Use italic parameter instead of Helvetica-Italic font name
+        italic=True
     ))
     
     # Build the PDF content
