@@ -343,4 +343,49 @@ class EmailLog(db.Model):
     payslip = db.relationship('Payslip', backref='email_logs')
     
     def __repr__(self):
-        return f'<EmailLog {self.id} for Payslip #{self.payslip_id} - {self.status}>'
+        return f'<EmailLog {self.id} for Payslip #{self.payslip_id}>'
+
+
+class CompanySettings(db.Model):
+    """Model for storing company information that appears on payslips and reports."""
+    id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(100), nullable=False, default='Nigerian Payroll System')
+    company_address = db.Column(db.String(256), nullable=False, default='123 Lagos Business District')
+    company_city = db.Column(db.String(64), nullable=False, default='Lagos')
+    company_state = db.Column(db.String(64), nullable=False, default='Lagos')
+    company_country = db.Column(db.String(64), nullable=False, default='Nigeria')
+    company_postal_code = db.Column(db.String(20), nullable=True)
+    company_phone = db.Column(db.String(20), nullable=False, default='+234 123 456 7890')
+    company_email = db.Column(db.String(120), nullable=False, default='payroll@nigerianpayroll.com')
+    company_website = db.Column(db.String(120), nullable=True, default='www.nigerianpayroll.com')
+    company_registration_number = db.Column(db.String(50), nullable=True)
+    company_tax_id = db.Column(db.String(50), nullable=True)
+    company_logo = db.Column(db.String(256), nullable=True, default='static/img/company_logo.svg')
+    
+    # Banking information
+    bank_name = db.Column(db.String(100), nullable=True)
+    bank_account_number = db.Column(db.String(20), nullable=True)
+    bank_account_name = db.Column(db.String(100), nullable=True)
+    bank_branch = db.Column(db.String(100), nullable=True)
+    bank_sort_code = db.Column(db.String(20), nullable=True)
+    
+    # Timestamps
+    last_updated_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    date_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship
+    last_updated_by = db.relationship('User', backref='company_settings_updates')
+    
+    def __repr__(self):
+        return f'<CompanySettings {self.id}: {self.company_name}>'
+    
+    @classmethod
+    def get_settings(cls):
+        """Get the company settings or create default if none exists."""
+        settings = cls.query.first()
+        if not settings:
+            settings = cls()
+            db.session.add(settings)
+            db.session.commit()
+        return settings

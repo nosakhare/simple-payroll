@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %}Company Settings{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">Company Settings</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+                        <li class="breadcrumb-item active">Company Settings</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Company Logo</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if company_settings.company_logo %}
+                    <img src="{{ url_for('static', filename=company_settings.company_logo.replace('static/', '')) }}" 
+                         alt="{{ company_settings.company_name }} Logo" 
+                         class="img-fluid mb-3" 
+                         style="max-height: 150px;">
+                    {% else %}
+                    <div class="alert alert-warning">
+                        No logo uploaded yet.
+                    </div>
+                    {% endif %}
+
+                    <form action="{{ url_for('settings.upload_logo') }}" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="logo" class="form-label">Upload New Logo</label>
+                            <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
+                            <div class="form-text">Recommended size: 300x300px. Formats: PNG, JPG, SVG</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-1"></i> Upload Logo
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Company Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('settings.company') }}">
+                        {{ form.hidden_tag() }}
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <h5 class="border-bottom pb-2">General Information</h5>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.company_name.label(class="form-label") }}
+                                {{ form.company_name(class="form-control" + (" is-invalid" if form.company_name.errors else "")) }}
+                                {% for error in form.company_name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.company_email.label(class="form-label") }}
+                                {{ form.company_email(class="form-control" + (" is-invalid" if form.company_email.errors else "")) }}
+                                {% for error in form.company_email.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.company_phone.label(class="form-label") }}
+                                {{ form.company_phone(class="form-control" + (" is-invalid" if form.company_phone.errors else "")) }}
+                                {% for error in form.company_phone.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.company_website.label(class="form-label") }}
+                                {{ form.company_website(class="form-control" + (" is-invalid" if form.company_website.errors else "")) }}
+                                {% for error in form.company_website.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                {{ form.company_address.label(class="form-label") }}
+                                {{ form.company_address(class="form-control" + (" is-invalid" if form.company_address.errors else ""), rows=3) }}
+                                {% for error in form.company_address.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.company_city.label(class="form-label") }}
+                                {{ form.company_city(class="form-control" + (" is-invalid" if form.company_city.errors else "")) }}
+                                {% for error in form.company_city.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.company_state.label(class="form-label") }}
+                                {{ form.company_state(class="form-control" + (" is-invalid" if form.company_state.errors else "")) }}
+                                {% for error in form.company_state.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.company_postal_code.label(class="form-label") }}
+                                {{ form.company_postal_code(class="form-control" + (" is-invalid" if form.company_postal_code.errors else "")) }}
+                                {% for error in form.company_postal_code.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.company_country.label(class="form-label") }}
+                                {{ form.company_country(class="form-control" + (" is-invalid" if form.company_country.errors else "")) }}
+                                {% for error in form.company_country.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.company_registration_number.label(class="form-label") }}
+                                {{ form.company_registration_number(class="form-control" + (" is-invalid" if form.company_registration_number.errors else "")) }}
+                                {% for error in form.company_registration_number.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.company_tax_id.label(class="form-label") }}
+                                {{ form.company_tax_id(class="form-control" + (" is-invalid" if form.company_tax_id.errors else "")) }}
+                                {% for error in form.company_tax_id.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3 mt-4">
+                                <h5 class="border-bottom pb-2">Banking Information</h5>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.bank_name.label(class="form-label") }}
+                                {{ form.bank_name(class="form-control" + (" is-invalid" if form.bank_name.errors else "")) }}
+                                {% for error in form.bank_name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.bank_account_number.label(class="form-label") }}
+                                {{ form.bank_account_number(class="form-control" + (" is-invalid" if form.bank_account_number.errors else "")) }}
+                                {% for error in form.bank_account_number.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.bank_account_name.label(class="form-label") }}
+                                {{ form.bank_account_name(class="form-control" + (" is-invalid" if form.bank_account_name.errors else "")) }}
+                                {% for error in form.bank_account_name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.bank_branch.label(class="form-label") }}
+                                {{ form.bank_branch(class="form-control" + (" is-invalid" if form.bank_branch.errors else "")) }}
+                                {% for error in form.bank_branch.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.bank_sort_code.label(class="form-label") }}
+                                {{ form.bank_sort_code(class="form-control" + (" is-invalid" if form.bank_sort_code.errors else "")) }}
+                                {% for error in form.bank_sort_code.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i> {{ form.submit.label.text }}
+                                </button>
+                                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i> Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -271,3 +271,43 @@ class ProrationCalculatorForm(FlaskForm):
         """Validate end date if provided."""
         if field.data and field.data < self.start_date.data:
             raise ValidationError('End date must be after start date')
+
+
+class CompanySettingsForm(FlaskForm):
+    """Form for editing company settings."""
+    # Company Information
+    company_name = StringField('Company Name', validators=[DataRequired(), Length(max=100)])
+    company_address = TextAreaField('Address', validators=[DataRequired(), Length(max=256)])
+    company_city = StringField('City', validators=[DataRequired(), Length(max=64)])
+    company_state = SelectField('State', choices=[
+        ('Abia', 'Abia'), ('Adamawa', 'Adamawa'), ('Akwa Ibom', 'Akwa Ibom'),
+        ('Anambra', 'Anambra'), ('Bauchi', 'Bauchi'), ('Bayelsa', 'Bayelsa'),
+        ('Benue', 'Benue'), ('Borno', 'Borno'), ('Cross River', 'Cross River'),
+        ('Delta', 'Delta'), ('Ebonyi', 'Ebonyi'), ('Edo', 'Edo'),
+        ('Ekiti', 'Ekiti'), ('Enugu', 'Enugu'), ('FCT Abuja', 'FCT Abuja'),
+        ('Gombe', 'Gombe'), ('Imo', 'Imo'), ('Jigawa', 'Jigawa'),
+        ('Kaduna', 'Kaduna'), ('Kano', 'Kano'), ('Katsina', 'Katsina'),
+        ('Kebbi', 'Kebbi'), ('Kogi', 'Kogi'), ('Kwara', 'Kwara'),
+        ('Lagos', 'Lagos'), ('Nasarawa', 'Nasarawa'), ('Niger', 'Niger'),
+        ('Ogun', 'Ogun'), ('Ondo', 'Ondo'), ('Osun', 'Osun'),
+        ('Oyo', 'Oyo'), ('Plateau', 'Plateau'), ('Rivers', 'Rivers'),
+        ('Sokoto', 'Sokoto'), ('Taraba', 'Taraba'), ('Yobe', 'Yobe'),
+        ('Zamfara', 'Zamfara')
+    ], validators=[DataRequired()])
+    company_country = StringField('Country', validators=[DataRequired(), Length(max=64)], default='Nigeria')
+    company_postal_code = StringField('Postal Code', validators=[Optional(), Length(max=20)])
+    company_phone = StringField('Phone Number', validators=[DataRequired(), Length(max=20)])
+    company_email = EmailField('Email', validators=[DataRequired(), Email()])
+    company_website = StringField('Website', validators=[Optional(), Length(max=120)])
+    company_registration_number = StringField('Registration Number', validators=[Optional(), Length(max=50)])
+    company_tax_id = StringField('Tax ID', validators=[Optional(), Length(max=50)])
+    
+    # Banking Information
+    bank_name = StringField('Bank Name', validators=[Optional(), Length(max=100)])
+    bank_account_number = StringField('Account Number', validators=[Optional(), Length(max=20)])
+    bank_account_name = StringField('Account Name', validators=[Optional(), Length(max=100)])
+    bank_branch = StringField('Branch', validators=[Optional(), Length(max=100)])
+    bank_sort_code = StringField('Sort Code', validators=[Optional(), Length(max=20)])
+    
+    # Logo (handled separately)
+    submit = SubmitField('Save Settings')

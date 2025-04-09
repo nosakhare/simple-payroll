@@ -17,7 +17,7 @@ from PIL import Image as PILImage
 import tempfile
 
 from app import db
-from models import Payslip, Employee, Payroll, PayrollItem, EmailLog, User
+from models import Payslip, Employee, Payroll, PayrollItem, EmailLog, User, CompanySettings
 from utils import format_currency, generate_payslip_data
 
 def convert_svg_to_png(svg_path):
@@ -138,16 +138,19 @@ def create_payslip_pdf(payroll_item_id, user_id):
     # Build the PDF content
     elements = []
     
+    # Get company settings from database
+    company_settings = CompanySettings.get_settings()
+    
     # Company header
-    company_name = current_app.config.get('COMPANY_NAME')
-    company_address = current_app.config.get('COMPANY_ADDRESS')
-    company_city = current_app.config.get('COMPANY_CITY')
-    company_country = current_app.config.get('COMPANY_COUNTRY')
-    company_email = current_app.config.get('COMPANY_EMAIL')
-    company_phone = current_app.config.get('COMPANY_PHONE')
+    company_name = company_settings.company_name
+    company_address = company_settings.company_address
+    company_city = company_settings.company_city
+    company_country = company_settings.company_country
+    company_email = company_settings.company_email
+    company_phone = company_settings.company_phone
     
     # Try to add company logo if it exists
-    logo_path = current_app.config.get('COMPANY_LOGO')
+    logo_path = company_settings.company_logo
     full_logo_path = os.path.join(current_app.root_path, logo_path)
     if logo_path and os.path.exists(full_logo_path):
         # Check if it's an SVG file
@@ -330,7 +333,7 @@ def create_payslip_pdf(payroll_item_id, user_id):
     
     # Footer text
     elements.append(Paragraph("This is a computer-generated document and does not require a signature.", styles['FooterText']))
-    elements.append(Paragraph(f"Nigerian Payroll System | {datetime.now().year} © All Rights Reserved", styles['FooterText']))
+    elements.append(Paragraph(f"{company_name} | {datetime.now().year} © All Rights Reserved", styles['FooterText']))
     
     # Build the PDF
     doc.build(elements)

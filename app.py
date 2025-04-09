@@ -51,6 +51,7 @@ def create_app(config_class=Config):
     from routes.calculator import calculator as calculator_bp
     from routes.test import test as test_bp
     from routes.payslips import payslips as payslips_bp
+    from routes.settings import settings as settings_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -60,6 +61,7 @@ def create_app(config_class=Config):
     app.register_blueprint(calculator_bp, url_prefix='/calculator')
     app.register_blueprint(test_bp, url_prefix='/test')
     app.register_blueprint(payslips_bp, url_prefix='/payslips')
+    app.register_blueprint(settings_bp, url_prefix='/settings')
     
     # Add custom Jinja filters
     import json
@@ -67,6 +69,31 @@ def create_app(config_class=Config):
     def from_json_filter(value):
         """Convert a JSON string to a Python dictionary."""
         return json.loads(value) if value else {}
+        
+    # Add company settings to all templates
+    @app.context_processor
+    def inject_company_settings():
+        from models import CompanySettings
+        """Make company settings available to all templates."""
+        try:
+            settings = CompanySettings.get_settings()
+            # Update app config with company settings so they're available through config object
+            app.config['COMPANY_NAME'] = settings.company_name
+            app.config['COMPANY_ADDRESS'] = settings.company_address
+            app.config['COMPANY_CITY'] = settings.company_city
+            app.config['COMPANY_COUNTRY'] = settings.company_country
+            app.config['COMPANY_EMAIL'] = settings.company_email
+            app.config['COMPANY_PHONE'] = settings.company_phone
+            app.config['COMPANY_WEBSITE'] = settings.company_website
+            app.config['COMPANY_LOGO'] = settings.company_logo
+            
+            return {
+                'company_settings': settings
+            }
+        except Exception as e:
+            # In case of error, return empty dict
+            print(f"Error loading company settings: {e}")
+            return {'company_settings': None}
     
     return app
 
@@ -78,7 +105,8 @@ with app.app_context():
     # Import models for database creation
     from models import (
         User, Employee, Payroll, PayrollItem, TaxBracket, AllowanceType, 
-        DeductionType, SalaryConfiguration, PayrollAdjustment, Payslip, EmailLog
+        DeductionType, SalaryConfiguration, PayrollAdjustment, Payslip, EmailLog,
+        CompanySettings
     )
     
     # Create all tables
