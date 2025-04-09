@@ -12,10 +12,36 @@ from reportlab.platypus import (
 from reportlab.pdfgen import canvas
 from reportlab.graphics.shapes import Drawing, Line
 from flask import current_app
+import cairosvg
+from PIL import Image as PILImage
+import tempfile
 
 from app import db
 from models import Payslip, Employee, Payroll, PayrollItem, EmailLog, User
 from utils import format_currency, generate_payslip_data
+
+def convert_svg_to_png(svg_path):
+    """
+    Convert SVG file to PNG format for use with ReportLab.
+    
+    Args:
+        svg_path: Path to SVG file
+        
+    Returns:
+        Path to temporary PNG file
+    """
+    try:
+        # Create a temporary file for the PNG output
+        fd, temp_path = tempfile.mkstemp(suffix='.png')
+        os.close(fd)
+        
+        # Convert SVG to PNG
+        cairosvg.svg2png(url=svg_path, write_to=temp_path)
+        
+        return temp_path
+    except Exception as e:
+        print(f"Error converting SVG to PNG: {e}")
+        return None
 
 def create_payslip_pdf(payroll_item_id, user_id):
     """
@@ -122,11 +148,39 @@ def create_payslip_pdf(payroll_item_id, user_id):
     
     # Try to add company logo if it exists
     logo_path = current_app.config.get('COMPANY_LOGO')
-    if logo_path and os.path.exists(os.path.join(current_app.root_path, logo_path)):
-        logo = Image(os.path.join(current_app.root_path, logo_path))
-        logo.drawWidth = 2.5*cm
-        logo.drawHeight = 2.5*cm
-        elements.append(logo)
+    full_logo_path = os.path.join(current_app.root_path, logo_path)
+    if logo_path and os.path.exists(full_logo_path):
+        # Check if it's an SVG file
+        if logo_path.lower().endswith('.svg'):
+            # Convert SVG to PNG
+            temp_png_path = convert_svg_to_png(full_logo_path)
+            if temp_png_path:
+                try:
+                    logo = Image(temp_png_path)
+                    logo.drawWidth = 2.5*cm
+                    logo.drawHeight = 2.5*cm
+                    elements.append(logo)
+                    
+                    # Schedule the temporary file for deletion
+                    # We don't remove it immediately because ReportLab needs it during PDF generation
+                    @current_app.teardown_appcontext
+                    def remove_temp_file(exception=None):
+                        try:
+                            if os.path.exists(temp_png_path):
+                                os.remove(temp_png_path)
+                        except Exception as e:
+                            print(f"Error removing temporary file: {e}")
+                except Exception as e:
+                    print(f"Error adding logo to PDF: {e}")
+        else:
+            # Use the image directly
+            try:
+                logo = Image(full_logo_path)
+                logo.drawWidth = 2.5*cm
+                logo.drawHeight = 2.5*cm
+                elements.append(logo)
+            except Exception as e:
+                print(f"Error adding logo to PDF: {e}")
     
     # Company header
     elements.append(Paragraph(company_name, styles['CompanyName']))

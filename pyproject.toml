@@ -16,4 +16,6 @@ dependencies = [
     "flask-wtf>=1.2.2",
     "reportlab>=4.3.1",
     "flask-mail>=0.10.0",
+    "pillow>=11.1.0",
+    "cairosvg>=2.7.1",
 ]
