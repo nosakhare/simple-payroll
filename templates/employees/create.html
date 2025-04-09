@@ -208,6 +208,9 @@
                     <div class="form-group">
                         {{ form.bank_id.label(class="form-label") }}
                         {{ form.bank_id(class="form-control" + (" is-invalid" if form.bank_id.errors else "")) }}
+                        <input type="text" id="bank_search" class="form-control{{ ' is-invalid' if form.bank_id.errors }}" 
+                            placeholder="Start typing bank name..." autocomplete="off">
+                        <div id="bank-autocomplete-results" class="position-absolute w-100 shadow-sm" style="z-index: 1000; display: none; max-height: 300px; overflow-y: auto;"></div>
                         {% for error in form.bank_id.errors %}
                         <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
@@ -273,4 +276,8 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/bank-autocomplete.js') }}"></script>
 {% endblock %}
