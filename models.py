@@ -362,12 +362,7 @@ class CompanySettings(db.Model):
     company_tax_id = db.Column(db.String(50), nullable=True)
     company_logo = db.Column(db.String(256), nullable=True, default='static/img/company_logo.svg')
     
-    # Banking information
-    bank_name = db.Column(db.String(100), nullable=True)
-    bank_account_number = db.Column(db.String(20), nullable=True)
-    bank_account_name = db.Column(db.String(100), nullable=True)
-    bank_branch = db.Column(db.String(100), nullable=True)
-    bank_sort_code = db.Column(db.String(20), nullable=True)
+    # Banking information removed as requested
     
     # Timestamps
     last_updated_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)

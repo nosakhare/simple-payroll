@@ -160,55 +160,7 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-12 mb-3 mt-4">
-                                <h5 class="border-bottom pb-2">Banking Information</h5>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.bank_name.label(class="form-label") }}
-                                {{ form.bank_name(class="form-control" + (" is-invalid" if form.bank_name.errors else "")) }}
-                                {% for error in form.bank_name.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                {{ form.bank_account_number.label(class="form-label") }}
-                                {{ form.bank_account_number(class="form-control" + (" is-invalid" if form.bank_account_number.errors else "")) }}
-                                {% for error in form.bank_account_number.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.bank_account_name.label(class="form-label") }}
-                                {{ form.bank_account_name(class="form-control" + (" is-invalid" if form.bank_account_name.errors else "")) }}
-                                {% for error in form.bank_account_name.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                {{ form.bank_branch.label(class="form-label") }}
-                                {{ form.bank_branch(class="form-control" + (" is-invalid" if form.bank_branch.errors else "")) }}
-                                {% for error in form.bank_branch.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.bank_sort_code.label(class="form-label") }}
-                                {{ form.bank_sort_code(class="form-control" + (" is-invalid" if form.bank_sort_code.errors else "")) }}
-                                {% for error in form.bank_sort_code.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        </div>
 
                         <div class="row mt-4">
                             <div class="col-md-12">

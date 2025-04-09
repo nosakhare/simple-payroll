@@ -302,12 +302,7 @@ class CompanySettingsForm(FlaskForm):
     company_registration_number = StringField('Registration Number', validators=[Optional(), Length(max=50)])
     company_tax_id = StringField('Tax ID', validators=[Optional(), Length(max=50)])
     
-    # Banking Information
-    bank_name = StringField('Bank Name', validators=[Optional(), Length(max=100)])
-    bank_account_number = StringField('Account Number', validators=[Optional(), Length(max=20)])
-    bank_account_name = StringField('Account Name', validators=[Optional(), Length(max=100)])
-    bank_branch = StringField('Branch', validators=[Optional(), Length(max=100)])
-    bank_sort_code = StringField('Sort Code', validators=[Optional(), Length(max=20)])
+    # Banking Information fields removed as requested
     
     # Logo (handled separately)
     submit = SubmitField('Save Settings')
