@@ -3,13 +3,21 @@ import os
 from app import app, db
 from models import Bank
 
-def init_banks():
+def init_banks(start_index=0, batch_size=50):
     """
     Initialize Nigerian banks in the database from the provided JSON data.
     
     This will:
     1. Read the bank data from the JSON file
-    2. Add each bank to the database if it doesn't already exist
+    2. Add banks in batches (50 at a time by default)
+    3. Start from the specified index
+    
+    Args:
+        start_index: The index to start from in the bank_data list
+        batch_size: Number of banks to add in this batch
+        
+    Returns:
+        Tuple of (success, message)
     """
     try:
         with open('bank_codes.json', 'r') as f:
@@ -18,11 +26,26 @@ def init_banks():
         print(f"Error loading bank data: {e}")
         return False, f"Error loading bank data: {e}"
     
+    # Convert dictionary to list of (name, code) tuples for easier batch processing
+    banks_list = [(bank_name, bank_code) for bank_name, bank_code in banks_data.items()]
+    total_banks = len(banks_list)
+    
+    # Validate start index
+    if start_index < 0 or start_index >= total_banks:
+        message = f"Invalid start_index: {start_index}. Must be between 0 and {total_banks-1}"
+        print(message)
+        return False, message
+    
+    # Calculate end index
+    end_index = min(start_index + batch_size, total_banks)
+    
     # Counter for added banks
     added_count = 0
     
-    # Process each bank
-    for bank_name, bank_code in banks_data.items():
+    # Process banks in the current batch
+    for i in range(start_index, end_index):
+        bank_name, bank_code = banks_list[i]
+        
         # Check if bank already exists
         if not Bank.query.filter((Bank.name == bank_name) | (Bank.bank_code == bank_code)).first():
             bank = Bank(
@@ -37,9 +60,18 @@ def init_banks():
         db.session.commit()
         print(f"Added {added_count} new banks to the database.")
     else:
-        print("No new banks added to the database.")
+        print("No new banks added in this batch.")
     
-    return True, f"Processed bank data. Added {added_count} new banks."
+    # Report progress and status
+    progress_msg = f"Processed banks {start_index+1}-{end_index} of {total_banks}"
+    if end_index >= total_banks:
+        progress_msg += " (COMPLETE)"
+    else:
+        progress_msg += f" (Next batch starts at index {end_index})"
+        
+    result_msg = f"{progress_msg}. Added {added_count} new banks to the database."
+    
+    return True, result_msg
 
 def create_bank_json():
     """Create a JSON file of bank codes from the provided raw text."""
@@ -81,16 +113,40 @@ def create_bank_json():
     return True, f"Created bank_codes.json with {len(bank_data)} banks."
 
 def create_or_update_banks():
-    """Create JSON file or initialize banks based on command line argument."""
+    """Create JSON file or initialize banks based on command line arguments."""
     import sys
     
     with app.app_context():
-        if len(sys.argv) > 1 and sys.argv[1] == 'create_json':
-            # Just create the JSON file
-            success, message = create_bank_json()
-            print(message)
+        if len(sys.argv) > 1:
+            # Parse command line arguments
+            if sys.argv[1] == 'create_json':
+                # Just create the JSON file
+                success, message = create_bank_json()
+                print(message)
+            elif sys.argv[1] == 'batch':
+                # Process a specific batch
+                start_index = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+                batch_size = int(sys.argv[3]) if len(sys.argv) > 3 else 50
+                success, message = init_banks(start_index, batch_size)
+                print(message)
+            elif sys.argv[1] == 'count':
+                # Report the number of banks in the database
+                bank_count = Bank.query.count()
+                total_banks = 0
+                try:
+                    with open('bank_codes.json', 'r') as f:
+                        banks_data = json.load(f)
+                    total_banks = len(banks_data)
+                except Exception as e:
+                    print(f"Error reading bank_codes.json: {e}")
+                
+                print(f"Database has {bank_count} banks out of {total_banks} in the JSON file.")
+            else:
+                # Default operation
+                success, message = init_banks()
+                print(message)
         else:
-            # Initialize banks from existing JSON
+            # Default operation (process first batch)
             success, message = init_banks()
             print(message)
 
