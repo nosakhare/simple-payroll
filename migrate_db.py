@@ -65,6 +65,9 @@ def migrate_database():
         # Check and add Payroll.is_active column
         add_column('payroll', Payroll.__table__.c.is_active)
         
+        # Check and add Employee.is_contract column
+        add_column('employee', Employee.__table__.c.is_contract)
+        
         print("Database migration completed successfully.")
 
 if __name__ == "__main__":
