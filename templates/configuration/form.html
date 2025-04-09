@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if creating %}Create{% else %}Edit{% endif %} Salary Configuration
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    {% if creating %}Create New{% else %}Edit{% endif %} Salary Configuration
+                </h1>
+                <a href="{{ url_for('configuration.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Configurations
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{% if creating %}Create{% else %}Edit{% endif %} Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="salaryConfigForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control") }}
+                            {% if form.name.errors %}
+                            <div class="text-danger">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.basic_salary_percentage.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.basic_salary_percentage(class="form-control", id="basicSalary") }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                {% if form.basic_salary_percentage.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.basic_salary_percentage.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.transport_allowance_percentage.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.transport_allowance_percentage(class="form-control", id="transportAllowance") }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                {% if form.transport_allowance_percentage.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.transport_allowance_percentage.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.housing_allowance_percentage.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.housing_allowance_percentage(class="form-control", id="housingAllowance") }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                {% if form.housing_allowance_percentage.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.housing_allowance_percentage.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.utility_allowance_percentage.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.utility_allowance_percentage(class="form-control", id="utilityAllowance") }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                {% if form.utility_allowance_percentage.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.utility_allowance_percentage.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.meal_allowance_percentage.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.meal_allowance_percentage(class="form-control", id="mealAllowance") }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                {% if form.meal_allowance_percentage.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.meal_allowance_percentage.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.clothing_allowance_percentage.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.clothing_allowance_percentage(class="form-control", id="clothingAllowance") }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                {% if form.clothing_allowance_percentage.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.clothing_allowance_percentage.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Total: <span id="percentageTotal" class="badge bg-primary">0%</span></h5>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: 0%" id="basicBar">Basic: 0%</div>
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 0%" id="transportBar">Transport: 0%</div>
+                                <div class="progress-bar bg-info" role="progressbar" style="width: 0%" id="housingBar">Housing: 0%</div>
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: 0%" id="utilityBar">Utility: 0%</div>
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: 0%" id="mealBar">Meal: 0%</div>
+                                <div class="progress-bar bg-secondary" role="progressbar" style="width: 0%" id="clothingBar">Clothing: 0%</div>
+                            </div>
+                            <div id="totalError" class="mt-2 text-danger d-none">
+                                Total percentage must be exactly 100%. Please adjust values.
+                            </div>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="button" class="btn btn-outline-secondary me-2" onclick="window.location.href='{{ url_for('configuration.index') }}'">
+                                Cancel
+                            </button>
+                            {{ form.submit(class="btn btn-primary", id="submitBtn") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const percentageInputs = [
+            'basicSalary', 
+            'transportAllowance', 
+            'housingAllowance', 
+            'utilityAllowance', 
+            'mealAllowance', 
+            'clothingAllowance'
+        ];
+        
+        const bars = [
+            'basicBar', 
+            'transportBar', 
+            'housingBar', 
+            'utilityBar', 
+            'mealBar', 
+            'clothingBar'
+        ];
+        
+        function updateTotals() {
+            let total = 0;
+            
+            percentageInputs.forEach(function(id, index) {
+                const value = parseFloat(document.getElementById(id).value) || 0;
+                total += value;
+                
+                // Update the progress bar
+                const bar = document.getElementById(bars[index]);
+                bar.style.width = value + '%';
+                bar.textContent = id.replace(/([A-Z])/g, ' $1').replace(/^./, function(str) { 
+                    return str.toUpperCase(); 
+                }).replace(' Allowance', '') + ': ' + value + '%';
+            });
+            
+            // Update total
+            document.getElementById('percentageTotal').textContent = total.toFixed(2) + '%';
+            
+            // Show error if total is not 100%
+            const errorElem = document.getElementById('totalError');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (Math.abs(total - 100) > 0.01) {
+                errorElem.classList.remove('d-none');
+                submitBtn.disabled = true;
+            } else {
+                errorElem.classList.add('d-none');
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // Add event listeners to all input fields
+        percentageInputs.forEach(function(id) {
+            document.getElementById(id).addEventListener('input', updateTotals);
+        });
+        
+        // Initialize
+        updateTotals();
+    });
+</script>
+{% endblock %}

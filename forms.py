@@ -166,7 +166,66 @@ class CompensationChangeForm(FlaskForm):
             raise ValidationError('Effective date must be today or in the future')
 
 
+class SalaryConfigurationForm(FlaskForm):
+    """Form for setting up salary component percentages."""
+    name = StringField('Configuration Name', validators=[DataRequired(), Length(max=64)])
+    basic_salary_percentage = FloatField('Basic Salary (%)', validators=[DataRequired(), NumberRange(min=1, max=100)])
+    transport_allowance_percentage = FloatField('Transport Allowance (%)', validators=[DataRequired(), NumberRange(min=0, max=100)])
+    housing_allowance_percentage = FloatField('Housing Allowance (%)', validators=[DataRequired(), NumberRange(min=0, max=100)])
+    utility_allowance_percentage = FloatField('Utility Allowance (%)', validators=[DataRequired(), NumberRange(min=0, max=100)])
+    meal_allowance_percentage = FloatField('Meal Allowance (%)', validators=[DataRequired(), NumberRange(min=0, max=100)])
+    clothing_allowance_percentage = FloatField('Clothing Allowance (%)', validators=[DataRequired(), NumberRange(min=0, max=100)])
+    submit = SubmitField('Save Configuration')
+    
+    def validate(self):
+        """Custom validation to ensure all percentages add up to 100%."""
+        if not super().validate():
+            return False
+            
+        total = (
+            self.basic_salary_percentage.data +
+            self.transport_allowance_percentage.data +
+            self.housing_allowance_percentage.data +
+            self.utility_allowance_percentage.data +
+            self.meal_allowance_percentage.data +
+            self.clothing_allowance_percentage.data
+        )
+        
+        if abs(total - 100.0) > 0.01:  # Allow a small floating-point error
+            self.basic_salary_percentage.errors.append(f'Total percentage must be exactly 100%. Current total: {total:.2f}%')
+            return False
+            
+        return True
+
 class SearchForm(FlaskForm):
     """Form for searching employees."""
     query = StringField('Search', validators=[Optional()])
     submit = SubmitField('Search')
+
+class StatutoryCalculatorForm(FlaskForm):
+    """Form for statutory deductions test calculator."""
+    basic_salary = FloatField('Basic Salary (₦)', validators=[DataRequired(), NumberRange(min=0)])
+    transport_allowance = FloatField('Transport Allowance (₦)', validators=[Optional(), NumberRange(min=0)])
+    housing_allowance = FloatField('Housing Allowance (₦)', validators=[Optional(), NumberRange(min=0)])
+    other_allowances = FloatField('Other Allowances (₦)', validators=[Optional(), NumberRange(min=0)])
+    is_contract = BooleanField('Is Contract Employee', default=False)
+    submit = SubmitField('Calculate Statutory Deductions')
+    
+class ProrationCalculatorForm(FlaskForm):
+    """Form for salary proration calculator."""
+    amount = FloatField('Amount to Prorate (₦)', validators=[DataRequired(), NumberRange(min=0)])
+    start_date = DateField('Start Date', validators=[DataRequired()])
+    end_date = DateField('End Date', validators=[Optional()])
+    month = SelectField('Month', choices=[
+        (1, 'January'), (2, 'February'), (3, 'March'),
+        (4, 'April'), (5, 'May'), (6, 'June'),
+        (7, 'July'), (8, 'August'), (9, 'September'),
+        (10, 'October'), (11, 'November'), (12, 'December')
+    ], coerce=int, validators=[DataRequired()])
+    year = IntegerField('Year', validators=[DataRequired(), NumberRange(min=2000, max=2100)])
+    submit = SubmitField('Calculate Prorated Amount')
+    
+    def validate_end_date(self, field):
+        """Validate end date if provided."""
+        if field.data and field.data < self.start_date.data:
+            raise ValidationError('End date must be after start date')

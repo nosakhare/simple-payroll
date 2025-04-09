@@ -156,6 +156,39 @@ class CompensationHistory(db.Model):
         return f'<CompensationHistory {self.id} for Employee #{self.employee_id} @{self.effective_date}>'
 
 
+class SalaryConfiguration(db.Model):
+    """Model for storing salary component configuration percentages."""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    basic_salary_percentage = db.Column(db.Float, nullable=False)
+    transport_allowance_percentage = db.Column(db.Float, nullable=False, default=0.0)
+    housing_allowance_percentage = db.Column(db.Float, nullable=False, default=0.0)
+    utility_allowance_percentage = db.Column(db.Float, nullable=False, default=0.0)
+    meal_allowance_percentage = db.Column(db.Float, nullable=False, default=0.0)
+    clothing_allowance_percentage = db.Column(db.Float, nullable=False, default=0.0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    date_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    created_by = db.relationship('User', backref='salary_configurations')
+    
+    def __repr__(self):
+        return f'<SalaryConfiguration {self.id}: {self.name}>'
+    
+    @property
+    def total_percentage(self):
+        """Get the sum of all percentage allocations."""
+        return (
+            self.basic_salary_percentage +
+            self.transport_allowance_percentage +
+            self.housing_allowance_percentage +
+            self.utility_allowance_percentage +
+            self.meal_allowance_percentage +
+            self.clothing_allowance_percentage
+        )
+
 class PayrollItem(db.Model):
     """Model for individual employee payroll records within a payroll run."""
     id = db.Column(db.Integer, primary_key=True)

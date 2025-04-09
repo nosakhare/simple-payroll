@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Salary Proration Calculator - Nigerian Payroll System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2"><i class="fas fa-calendar-alt me-2"></i> Salary Proration Calculator</h1>
+                <div>
+                    <a href="{{ url_for('calculator.statutory') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-calculator me-1"></i> Statutory Calculator
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Input Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="prorationForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.amount.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                {{ form.amount(class="form-control", id="amount") }}
+                            </div>
+                            {% if form.amount.errors %}
+                            <div class="text-danger">
+                                {% for error in form.amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Full monthly amount to be prorated</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.start_date.label(class="form-label") }}
+                            {{ form.start_date(class="form-control", id="startDate", type="date") }}
+                            {% if form.start_date.errors %}
+                            <div class="text-danger">
+                                {% for error in form.start_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Employee start date or first day of work</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.end_date.label(class="form-label") }}
+                            {{ form.end_date(class="form-control", id="endDate", type="date") }}
+                            {% if form.end_date.errors %}
+                            <div class="text-danger">
+                                {% for error in form.end_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Employee end date (Optional)</div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.month.label(class="form-label") }}
+                                {{ form.month(class="form-select", id="month") }}
+                                {% if form.month.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.month.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.year.label(class="form-label") }}
+                                {{ form.year(class="form-control", id="year") }}
+                                {% if form.year.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.year.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-text">Month and year to prorate for</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-7">
+            {% if results %}
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Proration Results</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h4 class="text-muted mb-2">Original Amount</h4>
+                                    <h2 class="display-6 fw-bold">{{ format_currency(results.original_amount) }}</h2>
+                                    <p class="text-muted">Full monthly amount</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center">
+                                    <h4 class="text-muted mb-2">Prorated Amount</h4>
+                                    <h2 class="display-6 fw-bold text-success">{{ format_currency(results.prorated_amount) }}</h2>
+                                    <p class="text-muted">Adjusted amount</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>Proration Details</h5>
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th>Period:</th>
+                                    <td>{{ results.month_name }} {{ results.year }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Start Date:</th>
+                                    <td>{{ results.start_date.strftime('%d %B, %Y') }}</td>
+                                </tr>
+                                {% if results.end_date %}
+                                <tr>
+                                    <th>End Date:</th>
+                                    <td>{{ results.end_date.strftime('%d %B, %Y') }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <th>Proration Factor:</th>
+                                    <td>{{ "%.2f"|format(results.proration_factor * 100) }}%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-info mt-4">
+                        <i class="fas fa-info-circle me-1"></i> Proration is calculated based on working days (Monday-Friday) in the specified month.
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-sm btn-outline-primary" id="printResults">
+                        <i class="fas fa-print me-1"></i> Print Results
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center my-5">
+                        <i class="fas fa-calendar-alt fa-4x mb-3 text-muted"></i>
+                        <h4>Enter details to calculate prorated amount</h4>
+                        <p class="text-muted">
+                            This calculator determines the prorated salary amount based on working days.
+                        </p>
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-user-plus fa-2x mb-2 text-primary"></i>
+                                        <h5>New Hires</h5>
+                                        <p class="small">Calculate partial salary for employees who start mid-month</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-user-minus fa-2x mb-2 text-warning"></i>
+                                        <h5>Separations</h5>
+                                        <p class="small">Calculate final pay for employees who leave before month-end</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if results %}
+<script>
+    document.getElementById('printResults').addEventListener('click', function() {
+        window.print();
+    });
+</script>
+{% endif %}
+{% endblock %}

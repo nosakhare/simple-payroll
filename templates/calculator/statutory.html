@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Statutory Deductions Calculator - Nigerian Payroll System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2"><i class="fas fa-calculator me-2"></i> Statutory Deductions Calculator</h1>
+                <div>
+                    <a href="{{ url_for('calculator.proration') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-alt me-1"></i> Proration Calculator
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Input Salary Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="statutoryForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.basic_salary.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                {{ form.basic_salary(class="form-control", id="basicSalary") }}
+                            </div>
+                            {% if form.basic_salary.errors %}
+                            <div class="text-danger">
+                                {% for error in form.basic_salary.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Monthly basic salary amount</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.transport_allowance.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                {{ form.transport_allowance(class="form-control", id="transportAllowance") }}
+                            </div>
+                            {% if form.transport_allowance.errors %}
+                            <div class="text-danger">
+                                {% for error in form.transport_allowance.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.housing_allowance.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                {{ form.housing_allowance(class="form-control", id="housingAllowance") }}
+                            </div>
+                            {% if form.housing_allowance.errors %}
+                            <div class="text-danger">
+                                {% for error in form.housing_allowance.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.other_allowances.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                {{ form.other_allowances(class="form-control", id="otherAllowances") }}
+                            </div>
+                            {% if form.other_allowances.errors %}
+                            <div class="text-danger">
+                                {% for error in form.other_allowances.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Any additional allowances (e.g., utility, meal, clothing)</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.is_contract(class="form-check-input", id="isContract") }}
+                            {{ form.is_contract.label(class="form-check-label") }}
+                            <div class="form-text">Contract employees are exempt from pension contributions</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-7">
+            {% if results %}
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Calculation Results</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Monthly Income</h5>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th>Basic Salary:</th>
+                                        <td class="text-end">{{ format_currency(results.monthly_basic) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Transport Allowance:</th>
+                                        <td class="text-end">{{ format_currency(results.monthly_transport) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Housing Allowance:</th>
+                                        <td class="text-end">{{ format_currency(results.monthly_housing) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Other Allowances:</th>
+                                        <td class="text-end">{{ format_currency(results.monthly_other) }}</td>
+                                    </tr>
+                                    <tr class="table-primary">
+                                        <th>Total Gross Income:</th>
+                                        <td class="text-end fw-bold">{{ format_currency(results.monthly_gross) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Monthly Deductions</h5>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th>Pension (8%):</th>
+                                        <td class="text-end">{{ format_currency(results.monthly_pension) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>NHF (2.5%):</th>
+                                        <td class="text-end">{{ format_currency(results.monthly_nhf) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>PAYE Tax:</th>
+                                        <td class="text-end">{{ format_currency(results.monthly_tax) }}</td>
+                                    </tr>
+                                    <tr class="table-danger">
+                                        <th>Total Deductions:</th>
+                                        <td class="text-end fw-bold">{{ format_currency(results.total_monthly_deductions) }}</td>
+                                    </tr>
+                                    <tr class="table-success">
+                                        <th>Net Pay:</th>
+                                        <td class="text-end fw-bold">{{ format_currency(results.monthly_net_pay) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>Tax Calculation Details</h5>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Annual Gross Income:</th>
+                                    <td class="text-end">{{ format_currency(results.annual_gross) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Consolidated Relief Allowance:</th>
+                                    <td class="text-end">{{ format_currency(results.consolidated_relief) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Annual Taxable Income:</th>
+                                    <td class="text-end">{{ format_currency(results.annual_taxable_income) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Annual PAYE Tax:</th>
+                                    <td class="text-end">{{ format_currency(results.annual_tax) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if results.tax_details %}
+                    <div class="mt-4">
+                        <h5>Tax Bracket Breakdown</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Income Bracket</th>
+                                        <th>Tax Rate</th>
+                                        <th>Taxable Amount</th>
+                                        <th class="text-end">Tax</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bracket in results.tax_details %}
+                                    <tr>
+                                        <td>{{ bracket.bracket }}</td>
+                                        <td>{{ bracket.rate }}</td>
+                                        <td>{{ bracket.taxable_amount }}</td>
+                                        <td class="text-end">{{ bracket.tax }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="alert {% if results.is_pension_exempt %}alert-warning{% else %}alert-info{% endif %} mt-4">
+                        {% if results.is_contract %}
+                        <i class="fas fa-info-circle me-1"></i> Contract employees are exempt from pension contributions.
+                        {% elif results.monthly_gross < 30000 %}
+                        <i class="fas fa-info-circle me-1"></i> Employees earning below ₦30,000 are exempt from pension contributions.
+                        {% else %}
+                        <i class="fas fa-info-circle me-1"></i> Employer pension contribution (10%): {{ format_currency(results.monthly_employer_pension) }} per month.
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-sm btn-outline-primary" id="printResults">
+                        <i class="fas fa-print me-1"></i> Print Results
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center my-5">
+                        <i class="fas fa-calculator fa-4x mb-3 text-muted"></i>
+                        <h4>Enter salary details to calculate statutory deductions</h4>
+                        <p class="text-muted">
+                            This calculator implements Nigerian statutory deductions including:
+                        </p>
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-piggy-bank fa-2x mb-2 text-primary"></i>
+                                        <h5>Pension</h5>
+                                        <p class="small">8% for employees, 10% for employers</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-home fa-2x mb-2 text-success"></i>
+                                        <h5>NHF</h5>
+                                        <p class="small">2.5% National Housing Fund</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-chart-bar fa-2x mb-2 text-danger"></i>
+                                        <h5>PAYE Tax</h5>
+                                        <p class="small">Progressive tax structure</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if results %}
+<script>
+    document.getElementById('printResults').addEventListener('click', function() {
+        window.print();
+    });
+</script>
+{% endif %}
+{% endblock %}
