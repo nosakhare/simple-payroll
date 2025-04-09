@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if creating %}Create New Payroll{% else %}Process Payroll{% endif %} - Nigerian Payroll System
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        {% if creating %}
+        <i class="fas fa-plus-circle me-2"></i> Create New Payroll
+        {% else %}
+        <i class="fas fa-cogs me-2"></i> Process Payroll
+        {% endif %}
+    </h1>
+    <a href="{{ url_for('payroll.index') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Payrolls
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" action="{% if creating %}{{ url_for('payroll.create') }}{% else %}{{ url_for('payroll.process') }}{% endif %}">
+            {{ form.hidden_tag() }}
+            
+            {% if creating %}
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <div class="form-group">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Enter payroll name (e.g. August 2023 Payroll)") }}
+                        {% for error in form.name.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> The payroll name should be descriptive of the period it covers.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="form-group">
+                        {{ form.period_start.label(class="form-label") }}
+                        {{ form.period_start(class="form-control" + (" is-invalid" if form.period_start.errors else ""), type="date") }}
+                        {% for error in form.period_start.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="form-group">
+                        {{ form.period_end.label(class="form-label") }}
+                        {{ form.period_end(class="form-control" + (" is-invalid" if form.period_end.errors else ""), type="date") }}
+                        {% for error in form.period_end.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="form-group">
+                        {{ form.payment_date.label(class="form-label") }}
+                        {{ form.payment_date(class="form-control" + (" is-invalid" if form.payment_date.errors else ""), type="date") }}
+                        {% for error in form.payment_date.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-warning mb-4">
+                <i class="fas fa-exclamation-triangle me-2"></i> After creating the payroll, you'll need to process it to calculate employee salaries. The payroll will be created in "Draft" status.
+            </div>
+            
+            {% else %}
+            <div class="alert alert-warning mb-4">
+                <i class="fas fa-exclamation-triangle me-2"></i> You are about to process this payroll. This will calculate salaries for all active employees and finalize the payroll. After processing, the payroll cannot be modified.
+            </div>
+            
+            <div class="form-check mb-4">
+                {{ form.confirm(class="form-check-input" + (" is-invalid" if form.confirm.errors else "")) }}
+                {{ form.confirm.label(class="form-check-label") }}
+                {% for error in form.confirm.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            {{ form.payroll_id }}
+            {% endif %}
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('payroll.index') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

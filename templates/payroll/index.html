@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll - Nigerian Payroll System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3"><i class="fas fa-money-bill-wave me-2"></i> Payroll Management</h1>
+    <a href="{{ url_for('payroll.create') }}" class="btn btn-primary">
+        <i class="fas fa-plus-circle me-1"></i> New Payroll
+    </a>
+</div>
+
+<!-- Payroll Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Period</th>
+                        <th>Payment Date</th>
+                        <th>Status</th>
+                        <th>Total Basic</th>
+                        <th>Total Net Pay</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if payrolls.items %}
+                        {% for payroll in payrolls.items %}
+                        <tr>
+                            <td>{{ payroll.name }}</td>
+                            <td>{{ payroll.period_start.strftime('%d/%m/%Y') }} - {{ payroll.period_end.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ payroll.payment_date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if payroll.status == 'Draft' %}
+                                <span class="badge bg-warning">Draft</span>
+                                {% elif payroll.status == 'Processing' %}
+                                <span class="badge bg-info">Processing</span>
+                                {% elif payroll.status == 'Completed' %}
+                                <span class="badge bg-success">Completed</span>
+                                {% elif payroll.status == 'Cancelled' %}
+                                <span class="badge bg-danger">Cancelled</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ payroll.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ format_currency(payroll.total_basic_salary) }}</td>
+                            <td>{{ format_currency(payroll.total_net_pay) }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('payroll.view', id=payroll.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if payroll.status == 'Draft' %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ payroll.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal{{ payroll.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ payroll.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ payroll.id }}">Confirm Deletion</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete payroll <strong>{{ payroll.name }}</strong>?
+                                                <p class="text-danger mt-2">This action cannot be undone.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{{ url_for('payroll.delete', id=payroll.id) }}" method="post">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="fas fa-money-bill-slash fa-3x text-muted mb-3"></i>
+                                    <h5>No payrolls found</h5>
+                                    <p>You haven't created any payrolls yet.</p>
+                                    <a href="{{ url_for('payroll.create') }}" class="btn btn-primary mt-2">
+                                        <i class="fas fa-plus-circle me-1"></i> Create New Payroll
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if payrolls.pages > 1 %}
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if payrolls.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('payroll.index', page=payrolls.prev_num) }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+                </li>
+                {% endif %}
+                
+                {% for page in payrolls.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page %}
+                        {% if page == payrolls.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('payroll.index', page=page) }}">{{ page }}</a>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if payrolls.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('payroll.index', page=payrolls.next_num) }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

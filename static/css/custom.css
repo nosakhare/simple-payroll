@@ -1,0 +1,215 @@
+/* Nigerian Payroll System - Custom Styles */
+
+/* ======= General Styles ======= */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.footer {
+    margin-top: auto;
+    padding: 1.5rem 0;
+}
+
+/* Brand icon in navbar */
+.navbar-brand i {
+    font-size: 1.25rem;
+    vertical-align: middle;
+}
+
+/* Buttons with icons - proper alignment */
+.btn i {
+    vertical-align: middle;
+}
+
+/* Card shadows and hover effects */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* ======= Avatar Placeholders ======= */
+.avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    font-weight: bold;
+}
+
+/* Status badges */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* ======= Forms ======= */
+.form-label {
+    font-weight: 500;
+}
+
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* ======= Tables ======= */
+.table th {
+    font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* ======= Dashboard ======= */
+.stats-card {
+    min-height: 120px;
+}
+
+.stats-card i {
+    font-size: 2rem;
+}
+
+.stats-card .card-body {
+    position: relative;
+    z-index: 1;
+}
+
+.stats-card .stats-icon {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    font-size: 4rem;
+    opacity: 0.15;
+    z-index: 0;
+}
+
+/* ======= Employee Profile ======= */
+.employee-profile-header {
+    background-color: rgba(13, 110, 253, 0.1);
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+/* ======= Payroll ======= */
+.payroll-status {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.payroll-status.draft {
+    background-color: var(--bs-warning);
+}
+
+.payroll-status.processing {
+    background-color: var(--bs-info);
+}
+
+.payroll-status.completed {
+    background-color: var(--bs-success);
+}
+
+.payroll-status.cancelled {
+    background-color: var(--bs-danger);
+}
+
+/* ======= Payslip ======= */
+.payslip-header {
+    border-bottom: 2px solid var(--bs-primary);
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+.payslip-footer {
+    border-top: 1px solid rgba(var(--bs-secondary-rgb), 0.3);
+    padding-top: 1rem;
+    margin-top: 2rem;
+}
+
+/* Print styles for payslip */
+@media print {
+    body {
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
+    
+    .container {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .card-body {
+        padding: 0 !important;
+    }
+    
+    .table {
+        width: 100% !important;
+    }
+    
+    .table td, .table th {
+        background-color: transparent !important;
+        color: #000 !important;
+    }
+    
+    .text-success {
+        color: #000 !important;
+        font-weight: bold !important;
+    }
+}
+
+/* ======= Responsive Adjustments ======= */
+@media (max-width: 767.98px) {
+    .card-title {
+        font-size: 1.25rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .avatar-placeholder {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Dark mode specific override - for Replit Dark Theme */
+[data-bs-theme=dark] .form-control::placeholder,
+[data-bs-theme=dark] .form-select::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-bs-theme=dark] .dropdown-menu {
+    --bs-dropdown-bg: #343a40;
+    --bs-dropdown-link-hover-bg: rgba(13, 110, 253, 0.1);
+}
+
+[data-bs-theme=dark] .modal-content {
+    --bs-modal-bg: #343a40;
+}
+
+/* Chart canvas background */
+[data-bs-theme=dark] canvas {
+    background-color: transparent;
+}

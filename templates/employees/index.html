@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Employees - Nigerian Payroll System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3"><i class="fas fa-users me-2"></i> Employees</h1>
+    <a href="{{ url_for('employees.create') }}" class="btn btn-primary">
+        <i class="fas fa-user-plus me-1"></i> Add Employee
+    </a>
+</div>
+
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('employees.index') }}" class="row g-3">
+            <div class="col-md-10">
+                {{ search_form.query(class="form-control", placeholder="Search by name, ID, department, position, or email...") }}
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Employees Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Position</th>
+                        <th>Status</th>
+                        <th>Basic Salary</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if employees.items %}
+                        {% for employee in employees.items %}
+                        <tr>
+                            <td>{{ employee.employee_id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-placeholder bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px; font-size: 14px;">
+                                        {{ employee.first_name[0] }}{{ employee.last_name[0] }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ employee.first_name }} {{ employee.last_name }}</div>
+                                        <small class="text-muted">{{ employee.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ employee.department }}</td>
+                            <td>{{ employee.position }}</td>
+                            <td>
+                                {% if employee.employment_status == 'Active' %}
+                                <span class="badge bg-success">Active</span>
+                                {% elif employee.employment_status == 'On Leave' %}
+                                <span class="badge bg-info">On Leave</span>
+                                {% elif employee.employment_status == 'Suspended' %}
+                                <span class="badge bg-warning">Suspended</span>
+                                {% elif employee.employment_status == 'Terminated' %}
+                                <span class="badge bg-danger">Terminated</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ employee.employment_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ format_currency(employee.basic_salary) }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('employees.view', id=employee.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('employees.edit', id=employee.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ employee.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal{{ employee.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ employee.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ employee.id }}">Confirm Deletion</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete employee <strong>{{ employee.first_name }} {{ employee.last_name }}</strong>?
+                                                <p class="text-danger mt-2">This action cannot be undone.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{{ url_for('employees.delete', id=employee.id) }}" method="post">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                                    <h5>No employees found</h5>
+                                    {% if search_form.query.data %}
+                                    <p>No results for "{{ search_form.query.data }}". Try a different search term.</p>
+                                    <a href="{{ url_for('employees.index') }}" class="btn btn-outline-primary mt-2">
+                                        <i class="fas fa-sync-alt me-1"></i> Clear Search
+                                    </a>
+                                    {% else %}
+                                    <p>There are no employees in the system yet.</p>
+                                    <a href="{{ url_for('employees.create') }}" class="btn btn-primary mt-2">
+                                        <i class="fas fa-user-plus me-1"></i> Add Employee
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if employees.pages > 1 %}
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if employees.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('employees.index', page=employees.prev_num, query=search_form.query.data) }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+                </li>
+                {% endif %}
+                
+                {% for page in employees.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page %}
+                        {% if page == employees.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('employees.index', page=page, query=search_form.query.data) }}">{{ page }}</a>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if employees.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('employees.index', page=employees.next_num, query=search_form.query.data) }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

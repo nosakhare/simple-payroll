@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}{{ payroll.name }} - Nigerian Payroll System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3"><i class="fas fa-file-invoice-dollar me-2"></i> Payroll Details</h1>
+    <div>
+        {% if payroll.status == 'Draft' %}
+        <button type="button" class="btn btn-outline-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="fas fa-trash me-1"></i> Delete
+        </button>
+        {% endif %}
+        <a href="{{ url_for('payroll.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Payrolls
+        </a>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete payroll <strong>{{ payroll.name }}</strong>?
+                <p class="text-danger mt-2">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('payroll.delete', id=payroll.id) }}" method="post">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Payroll Summary Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="card-title mb-3">{{ payroll.name }}</h4>
+                <div class="mb-3">
+                    {% if payroll.status == 'Draft' %}
+                    <span class="badge bg-warning p-2">Draft</span>
+                    {% elif payroll.status == 'Processing' %}
+                    <span class="badge bg-info p-2">Processing</span>
+                    {% elif payroll.status == 'Completed' %}
+                    <span class="badge bg-success p-2">Completed</span>
+                    {% elif payroll.status == 'Cancelled' %}
+                    <span class="badge bg-danger p-2">Cancelled</span>
+                    {% else %}
+                    <span class="badge bg-secondary p-2">{{ payroll.status }}</span>
+                    {% endif %}
+                </div>
+                <hr>
+                <p><i class="fas fa-calendar-alt me-2"></i> <strong>Period:</strong> {{ payroll.period_start.strftime('%d %b, %Y') }} - {{ payroll.period_end.strftime('%d %b, %Y') }}</p>
+                <p><i class="fas fa-money-bill-wave me-2"></i> <strong>Payment Date:</strong> {{ payroll.payment_date.strftime('%d %b, %Y') }}</p>
+                <p><i class="fas fa-user me-2"></i> <strong>Created By:</strong> {{ payroll.created_by.first_name }} {{ payroll.created_by.last_name }}</p>
+                <p><i class="fas fa-clock me-2"></i> <strong>Date Created:</strong> {{ payroll.date_created.strftime('%d %b, %Y %H:%M') }}</p>
+                
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Basic Salary:</span>
+                    <span class="fw-bold">{{ format_currency(payroll.total_basic_salary) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Total Allowances:</span>
+                    <span class="fw-bold">{{ format_currency(payroll.total_allowances) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Total Deductions:</span>
+                    <span class="fw-bold">{{ format_currency(payroll.total_deductions) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Total Tax:</span>
+                    <span class="fw-bold">{{ format_currency(payroll.total_tax) }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span class="h5">Total Net Pay:</span>
+                    <span class="h5 text-success">{{ format_currency(payroll.total_net_pay) }}</span>
+                </div>
+                
+                {% if payroll.status == 'Draft' and process_form %}
+                <hr>
+                <form method="post" action="{{ url_for('payroll.process') }}">
+                    {{ process_form.hidden_tag() }}
+                    {{ process_form.payroll_id }}
+                    <div class="form-check mb-3">
+                        {{ process_form.confirm(class="form-check-input") }}
+                        {{ process_form.confirm.label(class="form-check-label") }}
+                    </div>
+                    <div class="d-grid">
+                        {{ process_form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payroll Items -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0"><i class="fas fa-users me-2"></i> Employee Payroll Details</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Basic Salary</th>
+                                <th>Gross Pay</th>
+                                <th>Total Deductions</th>
+                                <th>Net Pay</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if payroll_items %}
+                                {% for item in payroll_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-placeholder bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 12px;">
+                                                {{ item.employee.first_name[0] }}{{ item.employee.last_name[0] }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">{{ item.employee.first_name }} {{ item.employee.last_name }}</div>
+                                                <small class="text-muted">{{ item.employee.position }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ format_currency(item.basic_salary) }}</td>
+                                    <td>{{ format_currency(item.gross_pay) }}</td>
+                                    <td>{{ format_currency(item.tax_amount + item.pension_amount + item.nhf_amount + item.other_deductions) }}</td>
+                                    <td class="fw-bold">{{ format_currency(item.net_pay) }}</td>
+                                    <td>
+                                        <a href="{{ url_for('payroll.payslip', id=item.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-file-invoice"></i> Payslip
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        {% if payroll.status == 'Draft' %}
+                                        <div class="d-flex flex-column align-items-center">
+                                            <i class="fas fa-info-circle fa-3x text-warning mb-3"></i>
+                                            <h5>This payroll is in draft status</h5>
+                                            <p>Process the payroll to calculate employee salaries.</p>
+                                        </div>
+                                        {% else %}
+                                        <div class="d-flex flex-column align-items-center">
+                                            <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                                            <h5>No payroll items found</h5>
+                                            <p>There are no employees processed in this payroll.</p>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

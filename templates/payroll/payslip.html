@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Payslip - {{ payslip.employee.first_name }} {{ payslip.employee.last_name }} - Nigerian Payroll System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3"><i class="fas fa-file-invoice-dollar me-2"></i> Payslip</h1>
+    <div>
+        <button class="btn btn-outline-primary me-2" id="printPayslip">
+            <i class="fas fa-print me-1"></i> Print
+        </button>
+        <a href="{{ url_for('payroll.view', id=payslip.payroll.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Payroll
+        </a>
+    </div>
+</div>
+
+<div class="card" id="payslipContent">
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h2 class="h4 mb-3">Nigerian Payroll System</h2>
+                <p class="mb-1">123 Lagos Business District</p>
+                <p class="mb-1">Lagos, Nigeria</p>
+                <p class="mb-1">Email: payroll@nigerianpayroll.com</p>
+                <p>Phone: +234 123 456 7890</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <h3 class="h4 mb-3">Payslip</h3>
+                <p class="mb-1"><strong>Payroll:</strong> {{ payslip.payroll.name }}</p>
+                <p class="mb-1"><strong>Period:</strong> {{ payslip.payroll.period_start.strftime('%d/%m/%Y') }} - {{ payslip.payroll.period_end.strftime('%d/%m/%Y') }}</p>
+                <p class="mb-1"><strong>Payment Date:</strong> {{ payslip.payroll.payment_date.strftime('%d/%m/%Y') }}</p>
+                <p><strong>Generated On:</strong> {{ payslip.generated_on }}</p>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h4 class="h5 mb-3">Employee Information</h4>
+                <p class="mb-1"><strong>Name:</strong> {{ payslip.employee.first_name }} {{ payslip.employee.last_name }}</p>
+                <p class="mb-1"><strong>Employee ID:</strong> {{ payslip.employee.employee_id }}</p>
+                <p class="mb-1"><strong>Department:</strong> {{ payslip.employee.department }}</p>
+                <p><strong>Position:</strong> {{ payslip.employee.position }}</p>
+            </div>
+            <div class="col-md-6">
+                <h4 class="h5 mb-3">Payment Information</h4>
+                <p class="mb-1"><strong>Bank:</strong> {{ payslip.employee.bank_name }}</p>
+                <p class="mb-1"><strong>Account Number:</strong> {{ payslip.employee.account_number }}</p>
+                <p class="mb-1"><strong>Payment Method:</strong> {{ payslip.payment_method }}</p>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Earnings</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Basic Salary</td>
+                                        <td class="text-end">{{ format_currency(payslip.payroll_item.basic_salary) }}</td>
+                                    </tr>
+                                    
+                                    {% for name, amount in payslip.allowances.items() %}
+                                    <tr>
+                                        <td>{{ name }}</td>
+                                        <td class="text-end">{{ format_currency(amount) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    
+                                    <tr class="table-secondary">
+                                        <th>Gross Pay</th>
+                                        <th class="text-end">{{ format_currency(payslip.payroll_item.gross_pay) }}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Deductions</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for name, amount in payslip.deductions.items() %}
+                                    <tr>
+                                        <td>{{ name }}</td>
+                                        <td class="text-end">{{ format_currency(amount) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    
+                                    <tr class="table-secondary">
+                                        <th>Total Deductions</th>
+                                        <th class="text-end">{{ format_currency(payslip.payroll_item.tax_amount + payslip.payroll_item.pension_amount + payslip.payroll_item.nhf_amount + payslip.payroll_item.other_deductions) }}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5>Net Pay</h5>
+                                <h3 class="text-success">{{ format_currency(payslip.payroll_item.net_pay) }}</h3>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <div class="mt-2">
+                                    <p class="mb-1"><strong>Gross Pay:</strong> {{ format_currency(payslip.payroll_item.gross_pay) }}</p>
+                                    <p class="mb-1"><strong>Total Deductions:</strong> {{ format_currency(payslip.payroll_item.tax_amount + payslip.payroll_item.pension_amount + payslip.payroll_item.nhf_amount + payslip.payroll_item.other_deductions) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Tax Breakdown</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Annual Basic Salary</td>
+                                        <td class="text-end">{{ format_currency(payslip.tax_details.get('Annual Basic Salary', 0)) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Annual Gross Income</td>
+                                        <td class="text-end">{{ format_currency(payslip.tax_details.get('Annual Gross Income', 0)) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Consolidated Relief</td>
+                                        <td class="text-end">{{ format_currency(payslip.tax_details.get('Consolidated Relief', 0)) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Annual Taxable Income</td>
+                                        <td class="text-end">{{ format_currency(payslip.tax_details.get('Annual Taxable Income', 0)) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Annual Tax</td>
+                                        <td class="text-end">{{ format_currency(payslip.tax_details.get('Annual Tax', 0)) }}</td>
+                                    </tr>
+                                    <tr class="table-secondary">
+                                        <th>Monthly PAYE Tax</th>
+                                        <th class="text-end">{{ format_currency(payslip.tax_details.get('Monthly Tax', 0)) }}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        {% if payslip.tax_details.get('Tax Brackets') %}
+                        <h6 class="mt-4">Tax Calculation Details</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Income Bracket</th>
+                                        <th>Tax Rate</th>
+                                        <th>Taxable Amount</th>
+                                        <th class="text-end">Tax</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bracket in payslip.tax_details.get('Tax Brackets', []) %}
+                                    <tr>
+                                        <td>{{ bracket.get('bracket', '') }}</td>
+                                        <td>{{ bracket.get('rate', '') }}</td>
+                                        <td>{{ bracket.get('taxable_amount', '') }}</td>
+                                        <td class="text-end">{{ bracket.get('tax', '') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <p class="text-muted">This is a computer-generated document and does not require a signature.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('printPayslip').addEventListener('click', function() {
+    const printContents = document.getElementById('payslipContent').innerHTML;
+    const originalContents = document.body.innerHTML;
+    
+    document.body.innerHTML = `
+        <html>
+        <head>
+            <title>Payslip - {{ payslip.employee.first_name }} {{ payslip.employee.last_name }}</title>
+            <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+            <style>
+                body { padding: 20px; }
+                @media print {
+                    body { padding: 0; }
+                    .card { border: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                ${printContents}
+            </div>
+        </body>
+        </html>
+    `;
+    
+    window.print();
+    document.body.innerHTML = originalContents;
+});
+</script>
+{% endblock %}
