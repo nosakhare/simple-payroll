@@ -198,13 +198,12 @@ def process_payroll(payroll_id):
             clothing_allowance
         )
         
-        # Calculate deductions - use contract status (assume regular employees)
-        is_contract = employee.employment_status == 'Contract'
+        # Calculate deductions using employee's contract status
         monthly_pension = calculate_pension(
             monthly_basic_salary, 
             transport_allowance, 
             housing_allowance, 
-            is_contract
+            employee.is_contract
         )
         monthly_nhf = calculate_nhf(monthly_basic_salary)
         
@@ -213,7 +212,7 @@ def process_payroll(payroll_id):
             monthly_basic_salary, 
             transport_allowance, 
             housing_allowance, 
-            is_contract
+            employee.is_contract
         )
         
         # Calculate taxable income (annual)

@@ -119,11 +119,11 @@ class PayrollForm(FlaskForm):
         if field.data < self.period_end.data:
             raise ValidationError('Payment date must be after end date')
             
-    def validate(self):
+    def validate(self, extra_validators=None):
         """Custom validation to check for payroll period overlaps."""
         from models import Payroll
         
-        if not super().validate():
+        if not super().validate(extra_validators=extra_validators):
             return False
             
         # Check for overlapping payroll periods
@@ -219,9 +219,9 @@ class SalaryConfigurationForm(FlaskForm):
     clothing_allowance_percentage = FloatField('Clothing Allowance (%)', validators=[DataRequired(), NumberRange(min=0, max=100)])
     submit = SubmitField('Save Configuration')
     
-    def validate(self):
+    def validate(self, extra_validators=None):
         """Custom validation to ensure all percentages add up to 100%."""
-        if not super().validate():
+        if not super().validate(extra_validators=extra_validators):
             return False
             
         total = (
