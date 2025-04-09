@@ -90,6 +90,16 @@ def view(id):
     # Get email logs for this payslip
     email_logs = EmailLog.query.filter_by(payslip_id=id).order_by(EmailLog.send_date.desc()).all()
     
+    # Get company information from config
+    company_info = {
+        'name': current_app.config.get('COMPANY_NAME', 'Nigerian Payroll System'),
+        'address': current_app.config.get('COMPANY_ADDRESS', '123 Lagos Business District'),
+        'city': current_app.config.get('COMPANY_CITY', 'Lagos'),
+        'country': current_app.config.get('COMPANY_COUNTRY', 'Nigeria'),
+        'email': current_app.config.get('COMPANY_EMAIL', 'payroll@nigerianpayroll.com'),
+        'phone': current_app.config.get('COMPANY_PHONE', '+234 123 456 7890')
+    }
+    
     return render_template(
         'payslips/view.html',
         payslip=payslip,
@@ -97,7 +107,8 @@ def view(id):
         employee=employee,
         payroll=payroll,
         email_logs=email_logs,
-        format_currency=format_currency
+        format_currency=format_currency,
+        company_info=company_info
     )
 
 @payslips.route('/download/<int:id>')

@@ -168,9 +168,9 @@
             <div class="card">
                 <div class="card-body">
                     <div class="text-center mb-4">
-                        <h3 class="mb-0">{{ current_app.config.get('COMPANY_NAME', 'Nigerian Payroll System') }}</h3>
-                        <p class="mb-1">{{ current_app.config.get('COMPANY_ADDRESS', '123 Lagos Business District') }}</p>
-                        <p>{{ current_app.config.get('COMPANY_CITY', 'Lagos') }}, {{ current_app.config.get('COMPANY_COUNTRY', 'Nigeria') }}</p>
+                        <h3 class="mb-0">{{ company_info.name }}</h3>
+                        <p class="mb-1">{{ company_info.address }}</p>
+                        <p>{{ company_info.city }}, {{ company_info.country }}</p>
                     </div>
                     
                     <div class="text-center mb-4">
@@ -209,12 +209,14 @@
                                                     <td>Basic Salary</td>
                                                     <td class="text-end">{{ format_currency(payroll_item.basic_salary) }}</td>
                                                 </tr>
-                                                {% for name, amount in payroll_item.allowances.items() %}
-                                                <tr>
-                                                    <td>{{ name }}</td>
-                                                    <td class="text-end">{{ format_currency(amount) }}</td>
-                                                </tr>
-                                                {% endfor %}
+                                                {% if payroll_item.allowances and payroll_item.allowances is mapping %}
+                                                    {% for name, amount in payroll_item.allowances.items() %}
+                                                    <tr>
+                                                        <td>{{ name }}</td>
+                                                        <td class="text-end">{{ format_currency(amount) }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                {% endif %}
                                                 <tr class="fw-bold">
                                                     <td>Total Earnings</td>
                                                     <td class="text-end">{{ format_currency(payroll_item.gross_pay) }}</td>
@@ -235,12 +237,14 @@
                                     <div class="table-responsive">
                                         <table class="table mb-0">
                                             <tbody>
-                                                {% for name, amount in payroll_item.deductions.items() %}
-                                                <tr>
-                                                    <td>{{ name }}</td>
-                                                    <td class="text-end">{{ format_currency(amount) }}</td>
-                                                </tr>
-                                                {% endfor %}
+                                                {% if payroll_item.deductions and payroll_item.deductions is mapping %}
+                                                    {% for name, amount in payroll_item.deductions.items() %}
+                                                    <tr>
+                                                        <td>{{ name }}</td>
+                                                        <td class="text-end">{{ format_currency(amount) }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                {% endif %}
                                                 <tr class="fw-bold">
                                                     <td>Total Deductions</td>
                                                     <td class="text-end">{{ format_currency(payroll_item.tax_amount + payroll_item.pension_amount + payroll_item.nhf_amount + payroll_item.other_deductions) }}</td>
@@ -281,7 +285,7 @@
                     
                     <div class="text-center mt-4">
                         <p class="text-muted small">This is a computer-generated document and does not require a signature.</p>
-                        <p class="text-muted small">{{ current_app.config.get('COMPANY_NAME', 'Nigerian Payroll System') }} | {{ payslip.date_created.year }} © All Rights Reserved</p>
+                        <p class="text-muted small">{{ company_info.name }} | {{ payslip.date_created.year }} © All Rights Reserved</p>
                     </div>
                 </div>
             </div>
