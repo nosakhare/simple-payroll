@@ -154,6 +154,7 @@ def send_payslip_email(payslip_id):
             subject=subject,
             status='failed',
             error_message=server_response,
+            server_response=server_response,  # Store server response in failure cases too
             send_date=datetime.utcnow()
         )
         

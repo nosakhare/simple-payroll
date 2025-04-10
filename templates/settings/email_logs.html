@@ -117,6 +117,26 @@
                                                     <dt class="col-sm-3">Retry Count:</dt>
                                                     <dd class="col-sm-9">{{ log.retry_count }}</dd>
                                                     
+                                                    <dt class="col-sm-3">Status Message:</dt>
+                                                    <dd class="col-sm-9">
+                                                        {{ log.get_status_message() }}
+                                                        <div class="form-text">
+                                                            {% if log.status == 'sent' %}
+                                                                Note: This only indicates that the email was accepted by the mail server,
+                                                                but does not guarantee final delivery to the recipient's inbox.
+                                                            {% endif %}
+                                                        </div>
+                                                    </dd>
+                                                    
+                                                    {% if log.server_response %}
+                                                    <dt class="col-sm-3">Server Response:</dt>
+                                                    <dd class="col-sm-9">
+                                                        <div class="alert {% if log.status == 'sent' %}alert-success{% else %}alert-warning{% endif %}">
+                                                            {{ log.server_response }}
+                                                        </div>
+                                                    </dd>
+                                                    {% endif %}
+                                                    
                                                     {% if log.status == 'failed' and log.error_message %}
                                                     <dt class="col-sm-3">Error Message:</dt>
                                                     <dd class="col-sm-9">

@@ -389,6 +389,7 @@ class EmailLog(db.Model):
     subject = db.Column(db.String(256), nullable=False)
     status = db.Column(db.String(20), nullable=False)  # 'sent', 'failed', 'pending'
     error_message = db.Column(db.Text, nullable=True)
+    server_response = db.Column(db.Text, nullable=True)  # Store SMTP server response
     send_date = db.Column(db.DateTime, default=datetime.utcnow)
     retry_count = db.Column(db.Integer, default=0)
     
@@ -397,6 +398,15 @@ class EmailLog(db.Model):
     
     def __repr__(self):
         return f'<EmailLog {self.id} for Payslip #{self.payslip_id}>'
+        
+    def get_status_message(self):
+        """Get a detailed status message for display."""
+        if self.status == 'sent':
+            return "Email successfully handed off to the mail server for delivery"
+        elif self.status == 'failed':
+            return f"Failed to send email: {self.error_message}"
+        else:
+            return "Email is pending delivery"
 
 
 class CompanySettings(db.Model):
