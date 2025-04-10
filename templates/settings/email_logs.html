@@ -216,22 +216,22 @@
                                     <a class="page-link" href="{{ url_for('settings.email_logs', page=1, status=status, payroll_id=payroll_id) }}">First</a>
                                 </li>
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=page-1, status=status) }}">Previous</a>
+                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=page-1, status=status, payroll_id=payroll_id) }}">Previous</a>
                                 </li>
                                 {% endif %}
                                 
                                 {% for p in range(max(1, page-2), min(pages+1, page+3)) %}
                                 <li class="page-item {{ 'active' if p == page else '' }}">
-                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=p, status=status) }}">{{ p }}</a>
+                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=p, status=status, payroll_id=payroll_id) }}">{{ p }}</a>
                                 </li>
                                 {% endfor %}
                                 
                                 {% if page < pages %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=page+1, status=status) }}">Next</a>
+                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=page+1, status=status, payroll_id=payroll_id) }}">Next</a>
                                 </li>
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=pages, status=status) }}">Last</a>
+                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=pages, status=status, payroll_id=payroll_id) }}">Last</a>
                                 </li>
                                 {% endif %}
                             </ul>
