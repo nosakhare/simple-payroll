@@ -32,6 +32,17 @@ def company():
     
     # Process form submission
     if form.validate_on_submit():
+        # Check if email settings are being updated
+        email_updated = (
+            form.mail_server.data != company_settings.mail_server or
+            form.mail_port.data != company_settings.mail_port or
+            form.mail_use_tls.data != company_settings.mail_use_tls or
+            form.mail_use_ssl.data != company_settings.mail_use_ssl or
+            form.mail_username.data != company_settings.mail_username or
+            form.mail_password.data != company_settings.mail_password or
+            form.mail_default_sender.data != company_settings.mail_default_sender
+        )
+        
         # Update settings with form data
         form.populate_obj(company_settings)
         
@@ -41,7 +52,20 @@ def company():
         # Save changes
         db.session.commit()
         
-        flash('Company settings updated successfully.', 'success')
+        # Update email configuration immediately
+        if email_updated:
+            try:
+                from email_config import update_mail_config
+                success, message = update_mail_config()
+                if success:
+                    flash('Company settings and email configuration updated successfully.', 'success')
+                else:
+                    flash(f'Company settings updated, but email configuration update failed: {message}', 'warning')
+            except Exception as e:
+                flash(f'Company settings updated, but email configuration update failed: {str(e)}', 'warning')
+        else:
+            flash('Company settings updated successfully.', 'success')
+            
         return redirect(url_for('settings.company'))
         
     return render_template(

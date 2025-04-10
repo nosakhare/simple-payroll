@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -46,11 +47,9 @@ def create_app(config_class=Config):
     @app.before_request
     def before_request():
         try:
-            # Only try to update mail config if db is initialized and not in a db migration
-            if 'migrate' not in sys.argv[0] and db.get_engine(app) is not None:
-                from email_config import update_mail_config
-                # Update mail configuration from database
-                update_mail_config()
+            # Update mail configuration from database
+            from email_config import update_mail_config
+            update_mail_config()
         except Exception as e:
             app.logger.error(f"Error loading company settings: {str(e)}")
     
