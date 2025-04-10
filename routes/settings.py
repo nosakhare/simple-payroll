@@ -9,7 +9,7 @@ import uuid
 from sqlalchemy import desc
 
 from app import db
-from models import CompanySettings, EmailLog, Payslip
+from models import CompanySettings, EmailLog, Payslip, Payroll
 from forms import CompanySettingsForm
 from email_utils import send_payslip_email, retry_failed_emails
 
@@ -151,9 +151,10 @@ def email_logs():
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('main.index'))
     
-    # Get page number from query string, default to 1
+    # Get page number and filters from query string
     page = request.args.get('page', 1, type=int)
     status = request.args.get('status', '')
+    payroll_id = request.args.get('payroll_id', type=int)
     
     # Number of logs per page
     per_page = 20
@@ -165,6 +166,10 @@ def email_logs():
     if status:
         query = query.filter_by(status=status)
     
+    # Filter by payroll if provided
+    if payroll_id:
+        query = query.filter_by(payroll_id=payroll_id)
+    
     # Get paginated results
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     email_logs = pagination.items
@@ -172,12 +177,17 @@ def email_logs():
     # Get count of failed emails for the retry all button
     failed_count = EmailLog.query.filter_by(status='failed').filter(EmailLog.retry_count < 3).count()
     
+    # Get all payrolls for the dropdown filter
+    payrolls = Payroll.query.order_by(desc(Payroll.period_end)).all()
+    
     return render_template(
         'settings/email_logs.html',
         email_logs=email_logs,
         page=page,
         pages=pagination.pages,
         status=status,
+        payroll_id=payroll_id,
+        payrolls=payrolls,
         has_failed_emails=failed_count > 0,
         failed_count=failed_count
     )
@@ -206,8 +216,8 @@ def retry_email(log_id):
         flash('Payslip not found for this email.', 'danger')
         return redirect(url_for('settings.email_logs'))
     
-    # Try to resend the email
-    success, message = send_payslip_email(email_log.payslip_id)
+    # Try to resend the email, passing the payroll_id if it exists
+    success, message = send_payslip_email(email_log.payslip_id, email_log.payroll_id)
     
     if success:
         flash(f'Email resent successfully: {message}', 'success')

@@ -33,6 +33,14 @@
                                     <option value="failed" {% if status == 'failed' %}selected{% endif %}>Failed</option>
                                     <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
                                 </select>
+                                <select name="payroll_id" class="form-select">
+                                    <option value="">All Payrolls</option>
+                                    {% for p in payrolls %}
+                                        <option value="{{ p.id }}" {% if payroll_id == p.id %}selected{% endif %}>
+                                            {{ p.name }} ({{ p.period_start.strftime('%d-%b-%Y') }} to {{ p.period_end.strftime('%d-%b-%Y') }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
                                 <button type="submit" class="btn btn-light">Filter</button>
                             </div>
                         </form>
@@ -66,6 +74,15 @@
                                             <span class="badge bg-danger">Failed</span>
                                         {% else %}
                                             <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.payroll %}
+                                            <a href="{{ url_for('payroll.view', id=log.payroll_id) }}" class="badge bg-info text-decoration-none">
+                                                {{ log.payroll.name }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ log.retry_count }}</td>
@@ -145,6 +162,20 @@
                                                     </dd>
                                                     {% endif %}
                                                     
+                                                    <dt class="col-sm-3">Payroll:</dt>
+                                                    <dd class="col-sm-9">
+                                                        {% if log.payroll %}
+                                                        <a href="{{ url_for('payroll.view', id=log.payroll_id) }}" class="btn btn-sm btn-outline-info">
+                                                            <i class="fas fa-file-invoice-dollar"></i> {{ log.payroll.name }}
+                                                        </a>
+                                                        <div class="form-text">
+                                                            Period: {{ log.payroll.period_start.strftime('%d %b, %Y') }} - {{ log.payroll.period_end.strftime('%d %b, %Y') }}
+                                                        </div>
+                                                        {% else %}
+                                                        <span class="text-muted">Not part of a payroll run</span>
+                                                        {% endif %}
+                                                    </dd>
+                                                    
                                                     <dt class="col-sm-3">Payslip:</dt>
                                                     <dd class="col-sm-9">
                                                         {% if log.payslip %}
@@ -182,7 +213,7 @@
                             <ul class="pagination">
                                 {% if page > 1 %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=1, status=status) }}">First</a>
+                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=1, status=status, payroll_id=payroll_id) }}">First</a>
                                 </li>
                                 <li class="page-item">
                                     <a class="page-link" href="{{ url_for('settings.email_logs', page=page-1, status=status) }}">Previous</a>
