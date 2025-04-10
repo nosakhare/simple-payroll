@@ -105,17 +105,33 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
         # Login with credentials
         server.login(username, password)
         
-        # Create message with proper UTF-8 encoding for headers
-        mime_msg = MIMEMultipart('alternative')
+        # Create a new multipart message with explicit UTF-8 encoding
+        mime_msg = MIMEMultipart('mixed')
+        mime_msg.set_charset('utf-8')
+        
+        # Set headers with UTF-8 encoding
         mime_msg['Subject'] = Header(msg.subject, 'utf-8')
         mime_msg['From'] = Header(msg.sender, 'utf-8')
         mime_msg['To'] = Header(', '.join(msg.recipients), 'utf-8')
         
-        # Attach text and HTML parts with UTF-8 encoding
+        # Create a multipart/alternative part for text and HTML content
+        alt_part = MIMEMultipart('alternative')
+        alt_part.set_charset('utf-8')
+        
+        # Attach text part with UTF-8 encoding
         if msg.body:
-            mime_msg.attach(MIMEText(msg.body.encode('utf-8'), 'plain', 'utf-8'))
+            # Ensure the text is utf-8 encoded
+            text_part = MIMEText(msg.body, 'plain', 'utf-8')
+            alt_part.attach(text_part)
+        
+        # Attach HTML part with UTF-8 encoding
         if msg.html:
-            mime_msg.attach(MIMEText(msg.html.encode('utf-8'), 'html', 'utf-8'))
+            # Ensure the HTML is utf-8 encoded
+            html_part = MIMEText(msg.html, 'html', 'utf-8')
+            alt_part.attach(html_part)
+        
+        # Add the multipart/alternative part to the main message
+        mime_msg.attach(alt_part)
         
         # Attach files
         if msg.attachments:
@@ -128,25 +144,32 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
                     print(f"Processing as Attachment object with filename: {attachment.filename}")
                     filename = attachment.filename
                     data = attachment.data
+                    
+                    # Create attachment part with proper encoding for filename
                     part = MIMEApplication(data)
-                    part.add_header('Content-Disposition', 'attachment', filename=filename)
+                    encoded_filename = encode_filename(filename)
+                    part.add_header('Content-Disposition', 'attachment', 
+                                   filename=encoded_filename)
                     mime_msg.attach(part)
+                    
                 # Handle tuples in our custom format (filename, content_type, data)
                 elif isinstance(attachment, tuple) and len(attachment) == 3:
                     print(f"Processing as tuple: {attachment[0]}, {attachment[1]}")
                     filename, content_type, data = attachment
+                    
+                    # Create attachment part with proper encoding for filename
                     part = MIMEApplication(data)
-                    part.add_header('Content-Disposition', 'attachment', filename=filename)
+                    encoded_filename = encode_filename(filename)
+                    part.add_header('Content-Disposition', 'attachment', 
+                                   filename=encoded_filename)
                     mime_msg.attach(part)
+                    
                 # Fall back to using the attachment as is if it has binary data
                 elif hasattr(attachment, 'disposition') and hasattr(attachment, 'content_type'):
                     print(f"Processing as email.message.Message object")
                     mime_msg.attach(attachment)
                 else:
                     print(f"Warning: Unknown attachment format: {attachment}")
-        
-        # Set proper encoding to handle Unicode characters
-        mime_msg.add_header('Content-Type', 'text/plain', charset='utf-8')
         
         # Convert the message to a string with proper encoding
         message_str = mime_msg.as_string().encode('utf-8')
