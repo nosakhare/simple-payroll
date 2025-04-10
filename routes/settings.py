@@ -6,10 +6,12 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os
 import uuid
+from sqlalchemy import desc
 
 from app import db
-from models import CompanySettings
+from models import CompanySettings, EmailLog, Payslip
 from forms import CompanySettingsForm
+from email_utils import send_payslip_email, retry_failed_emails
 
 # Create blueprint
 settings = Blueprint('settings', __name__)
@@ -138,3 +140,98 @@ def upload_logo():
     
     flash('Company logo updated successfully.', 'success')
     return redirect(url_for('settings.company'))
+
+
+@settings.route('/email-logs', methods=['GET'])
+@login_required
+def email_logs():
+    """View email logs."""
+    # Only admin users can access this page
+    if not current_user.is_admin:
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    # Get page number from query string, default to 1
+    page = request.args.get('page', 1, type=int)
+    status = request.args.get('status', '')
+    
+    # Number of logs per page
+    per_page = 20
+    
+    # Query logs
+    query = EmailLog.query.order_by(desc(EmailLog.send_date))
+    
+    # Filter by status if provided
+    if status:
+        query = query.filter_by(status=status)
+    
+    # Get paginated results
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    email_logs = pagination.items
+    
+    # Get count of failed emails for the retry all button
+    failed_count = EmailLog.query.filter_by(status='failed').filter(EmailLog.retry_count < 3).count()
+    
+    return render_template(
+        'settings/email_logs.html',
+        email_logs=email_logs,
+        page=page,
+        pages=pagination.pages,
+        status=status,
+        has_failed_emails=failed_count > 0,
+        failed_count=failed_count
+    )
+
+
+@settings.route('/retry-email/<int:log_id>', methods=['POST'])
+@login_required
+def retry_email(log_id):
+    """Retry sending a failed email."""
+    # Only admin users can access this page
+    if not current_user.is_admin:
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    # Get the email log
+    email_log = EmailLog.query.get_or_404(log_id)
+    
+    # Check if it's a failed email
+    if email_log.status != 'failed':
+        flash('Only failed emails can be retried.', 'warning')
+        return redirect(url_for('settings.email_logs'))
+    
+    # Get the associated payslip
+    payslip = Payslip.query.get(email_log.payslip_id)
+    if not payslip:
+        flash('Payslip not found for this email.', 'danger')
+        return redirect(url_for('settings.email_logs'))
+    
+    # Try to resend the email
+    success, message = send_payslip_email(email_log.payslip_id)
+    
+    if success:
+        flash(f'Email resent successfully: {message}', 'success')
+    else:
+        flash(f'Failed to resend email: {message}', 'danger')
+    
+    return redirect(url_for('settings.email_logs'))
+
+
+@settings.route('/retry-all-emails', methods=['POST'])
+@login_required
+def retry_all_emails():
+    """Retry all failed emails."""
+    # Only admin users can access this page
+    if not current_user.is_admin:
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    # Retry failed emails
+    success, message, retried, succeeded = retry_failed_emails()
+    
+    if success:
+        flash(f'{message}', 'success')
+    else:
+        flash(f'Error: {message}', 'danger')
+    
+    return redirect(url_for('settings.email_logs'))

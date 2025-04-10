@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}Email Logs{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">Email Logs</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('settings.company') }}">Settings</a></li>
+                        <li class="breadcrumb-item active">Email Logs</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Email Delivery History</h5>
+                    <div>
+                        <form method="GET" class="d-inline">
+                            <div class="input-group">
+                                <select name="status" class="form-select">
+                                    <option value="" {% if not status %}selected{% endif %}>All Status</option>
+                                    <option value="sent" {% if status == 'sent' %}selected{% endif %}>Sent</option>
+                                    <option value="failed" {% if status == 'failed' %}selected{% endif %}>Failed</option>
+                                    <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+                                </select>
+                                <button type="submit" class="btn btn-light">Filter</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if email_logs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Recipient</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Retry Count</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in email_logs %}
+                                <tr>
+                                    <td>{{ log.send_date.strftime('%d-%b-%Y %H:%M') }}</td>
+                                    <td>{{ log.recipient }}</td>
+                                    <td>{{ log.subject }}</td>
+                                    <td>
+                                        {% if log.status == 'sent' %}
+                                            <span class="badge bg-success">Sent</span>
+                                        {% elif log.status == 'failed' %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.retry_count }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-info" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#emailDetailsModal{{ log.id }}">
+                                            <i class="fas fa-info-circle"></i> Details
+                                        </button>
+                                        {% if log.status == 'failed' %}
+                                        <form method="POST" action="{{ url_for('settings.retry_email', log_id=log.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                <i class="fas fa-redo"></i> Retry
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+
+                                <!-- Email Details Modal -->
+                                <div class="modal fade" id="emailDetailsModal{{ log.id }}" tabindex="-1" aria-labelledby="emailDetailsModalLabel{{ log.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="emailDetailsModalLabel{{ log.id }}">Email Details</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <dl class="row">
+                                                    <dt class="col-sm-3">Date:</dt>
+                                                    <dd class="col-sm-9">{{ log.send_date.strftime('%d %B, %Y %H:%M:%S') }}</dd>
+                                                    
+                                                    <dt class="col-sm-3">Recipient:</dt>
+                                                    <dd class="col-sm-9">{{ log.recipient }}</dd>
+                                                    
+                                                    <dt class="col-sm-3">Subject:</dt>
+                                                    <dd class="col-sm-9">{{ log.subject }}</dd>
+                                                    
+                                                    <dt class="col-sm-3">Status:</dt>
+                                                    <dd class="col-sm-9">
+                                                        {% if log.status == 'sent' %}
+                                                            <span class="badge bg-success">Sent</span>
+                                                        {% elif log.status == 'failed' %}
+                                                            <span class="badge bg-danger">Failed</span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning">Pending</span>
+                                                        {% endif %}
+                                                    </dd>
+                                                    
+                                                    <dt class="col-sm-3">Retry Count:</dt>
+                                                    <dd class="col-sm-9">{{ log.retry_count }}</dd>
+                                                    
+                                                    {% if log.status == 'failed' and log.error_message %}
+                                                    <dt class="col-sm-3">Error Message:</dt>
+                                                    <dd class="col-sm-9">
+                                                        <div class="alert alert-danger">{{ log.error_message }}</div>
+                                                    </dd>
+                                                    {% endif %}
+                                                    
+                                                    <dt class="col-sm-3">Payslip:</dt>
+                                                    <dd class="col-sm-9">
+                                                        {% if log.payslip %}
+                                                        <a href="{{ url_for('payslips.view', id=log.payslip_id) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-file-invoice"></i> View Payslip
+                                                        </a>
+                                                        {% else %}
+                                                        <span class="text-muted">N/A</span>
+                                                        {% endif %}
+                                                    </dd>
+                                                </dl>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                {% if log.status == 'failed' %}
+                                                <form method="POST" action="{{ url_for('settings.retry_email', log_id=log.id) }}" class="d-inline">
+                                                    <button type="submit" class="btn btn-warning">
+                                                        <i class="fas fa-redo"></i> Retry Sending
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if pages > 1 %}
+                    <div class="d-flex justify-content-center mt-4 mb-3">
+                        <nav aria-label="Email logs pagination">
+                            <ul class="pagination">
+                                {% if page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=1, status=status) }}">First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=page-1, status=status) }}">Previous</a>
+                                </li>
+                                {% endif %}
+                                
+                                {% for p in range(max(1, page-2), min(pages+1, page+3)) %}
+                                <li class="page-item {{ 'active' if p == page else '' }}">
+                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=p, status=status) }}">{{ p }}</a>
+                                </li>
+                                {% endfor %}
+                                
+                                {% if page < pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=page+1, status=status) }}">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('settings.email_logs', page=pages, status=status) }}">Last</a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="p-4 text-center">
+                        <p class="text-muted mb-0">No email logs found with the selected filters.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if has_failed_emails %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Failed Emails</h5>
+                </div>
+                <div class="card-body">
+                    <p>There are <span class="fw-bold">{{ failed_count }}</span> failed emails that could be retried.</p>
+                    <form method="POST" action="{{ url_for('settings.retry_all_emails') }}">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-redo me-1"></i> Retry All Failed Emails
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
