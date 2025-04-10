@@ -157,6 +157,11 @@
                                 <i class="fas fa-envelope me-1"></i> Email All Payslips
                             </button>
                         </form>
+                        <form method="POST" action="{{ url_for('payslips.resend_all', payroll_id=payroll.id) }}" class="d-inline ms-1">
+                            <button type="submit" class="btn btn-sm btn-info">
+                                <i class="fas fa-paper-plane me-1"></i> Resend All Payslips
+                            </button>
+                        </form>
                     </div>
                     {% endif %}
                 </div>
