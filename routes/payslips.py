@@ -178,6 +178,35 @@ def send(id):
     
     return redirect(url_for('payslips.view', id=id))
 
+@payslips.route('/resend/<int:id>', methods=['POST'])
+@login_required
+def resend(id):
+    """Resend a payslip even if it was already sent successfully."""
+    payslip = Payslip.query.get_or_404(id)
+    
+    # Get related info
+    payroll_item = PayrollItem.query.get(payslip.payroll_item_id)
+    payroll_id = payroll_item.payroll_id if payroll_item else None
+    
+    # Force resend by temporarily changing the email status
+    original_status = payslip.email_status
+    payslip.email_status = 'pending'
+    
+    # Send the email
+    success, message = send_payslip_email(id, payroll_id)
+    
+    # If sending failed, restore the original status
+    if not success and original_status == 'sent':
+        payslip.email_status = original_status
+        db.session.commit()
+        
+    if success:
+        flash("Payslip has been resent successfully.", 'success')
+    else:
+        flash(f"Error resending payslip: {message}", 'danger')
+    
+    return redirect(url_for('payslips.view', id=id))
+
 @payslips.route('/send-all/<int:payroll_id>', methods=['POST'])
 @login_required
 def send_all(payroll_id):
@@ -189,6 +218,34 @@ def send_all(payroll_id):
     
     if success:
         flash(message, 'success')
+    else:
+        flash(f"Error: {message}", 'danger')
+    
+    return redirect(url_for('payroll.view', id=payroll_id))
+
+@payslips.route('/resend-all/<int:payroll_id>', methods=['POST'])
+@login_required
+def resend_all(payroll_id):
+    """Resend all payslips for a payroll run, including already sent ones."""
+    payroll = Payroll.query.get_or_404(payroll_id)
+    
+    # Get all payslips for this payroll
+    payslips = Payslip.query.join(PayrollItem).filter(PayrollItem.payroll_id == payroll_id).all()
+    
+    if not payslips:
+        flash("No payslips found for this payroll", 'warning')
+        return redirect(url_for('payroll.view', id=payroll_id))
+    
+    # Temporarily mark all payslips as not sent
+    for payslip in payslips:
+        payslip.email_status = 'pending'
+    db.session.commit()
+    
+    # Send payslips
+    success, message, sent, failed = send_all_payslips(payroll_id)
+    
+    if success:
+        flash(f"Resent {sent} payslips, {failed} failed", 'success')
     else:
         flash(f"Error: {message}", 'danger')
     

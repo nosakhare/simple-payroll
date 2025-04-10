@@ -139,8 +139,14 @@
                                                 </a>
                                                 {% if not payslip.is_emailed or payslip.email_status != 'sent' %}
                                                 <form method="POST" action="{{ url_for('payslips.send', id=payslip.id) }}" class="d-inline">
-                                                    <button type="submit" class="btn btn-sm btn-outline-info">
+                                                    <button type="submit" class="btn btn-sm btn-outline-info" title="Send Email">
                                                         <i class="fas fa-envelope"></i>
+                                                    </button>
+                                                </form>
+                                                {% else %}
+                                                <form method="POST" action="{{ url_for('payslips.resend', id=payslip.id) }}" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Resend Email">
+                                                        <i class="fas fa-paper-plane"></i>
                                                     </button>
                                                 </form>
                                                 {% endif %}
