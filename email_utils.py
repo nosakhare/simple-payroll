@@ -77,6 +77,22 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
         from email.mime.multipart import MIMEMultipart
         from email.mime.text import MIMEText
         from email.mime.application import MIMEApplication
+        from email.header import Header
+        from email import charset
+
+        # Configure email encodings for proper Unicode handling
+        charset.add_charset('utf-8', charset.SHORTEST, charset.QP, 'utf-8')
+        
+        def encode_filename(filename):
+            """Helper function to encode filenames with UTF-8 for attachments"""
+            if not filename:
+                return filename
+            try:
+                # Use Header to properly encode the filename with UTF-8
+                return Header(filename, 'utf-8').encode()
+            except Exception as e:
+                print(f"Warning: Could not encode filename {filename}: {str(e)}")
+                return filename
         
         # Create connection
         server = smtplib.SMTP(current_app.config.get('MAIL_SERVER'), current_app.config.get('MAIL_PORT'))
@@ -89,17 +105,17 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
         # Login with credentials
         server.login(username, password)
         
-        # Create message
+        # Create message with proper UTF-8 encoding for headers
         mime_msg = MIMEMultipart('alternative')
-        mime_msg['Subject'] = msg.subject
-        mime_msg['From'] = msg.sender
-        mime_msg['To'] = ', '.join(msg.recipients)
+        mime_msg['Subject'] = Header(msg.subject, 'utf-8')
+        mime_msg['From'] = Header(msg.sender, 'utf-8')
+        mime_msg['To'] = Header(', '.join(msg.recipients), 'utf-8')
         
-        # Attach text and HTML parts
+        # Attach text and HTML parts with UTF-8 encoding
         if msg.body:
-            mime_msg.attach(MIMEText(msg.body, 'plain'))
+            mime_msg.attach(MIMEText(msg.body.encode('utf-8'), 'plain', 'utf-8'))
         if msg.html:
-            mime_msg.attach(MIMEText(msg.html, 'html'))
+            mime_msg.attach(MIMEText(msg.html.encode('utf-8'), 'html', 'utf-8'))
         
         # Attach files
         if msg.attachments:
@@ -129,8 +145,14 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
                 else:
                     print(f"Warning: Unknown attachment format: {attachment}")
         
-        # Send the email
-        server.sendmail(msg.sender, msg.recipients, mime_msg.as_string())
+        # Set proper encoding to handle Unicode characters
+        mime_msg.add_header('Content-Type', 'text/plain', charset='utf-8')
+        
+        # Convert the message to a string with proper encoding
+        message_str = mime_msg.as_string().encode('utf-8')
+        
+        # Send the email with proper encoding
+        server.sendmail(msg.sender, msg.recipients, message_str)
         server.quit()
         
         print(f"Email sent successfully from: {sender} to: {recipients}")
