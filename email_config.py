@@ -37,14 +37,18 @@ def update_mail_config():
             if settings.mail_username:
                 current_app.config['MAIL_USERNAME'] = settings.mail_username
             
-            # Prioritize database password over environment variable
+            # Set password from database and print debug information
             if settings.mail_password:
                 current_app.config['MAIL_PASSWORD'] = settings.mail_password
+                print(f"Using password from database settings (length: {len(settings.mail_password)})")
             else:
                 # Fall back to environment variable if database value not set
                 mail_password = os.environ.get('MAIL_PASSWORD')
                 if mail_password:
                     current_app.config['MAIL_PASSWORD'] = mail_password
+                    print(f"Using password from environment variable (length: {len(mail_password)})")
+                else:
+                    print("WARNING: No email password configured in database or environment variables")
             
             if settings.mail_default_sender:
                 current_app.config['MAIL_DEFAULT_SENDER'] = settings.mail_default_sender
