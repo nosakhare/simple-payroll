@@ -64,12 +64,13 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
         print(f"Failed to send email: {error_message}")
         return False, error_message
 
-def send_payslip_email(payslip_id):
+def send_payslip_email(payslip_id, payroll_id=None):
     """
     Send a payslip as an email attachment.
     
     Args:
         payslip_id: ID of the payslip to send
+        payroll_id: Optional ID of the payroll this payslip belongs to
         
     Returns:
         A tuple of (success, message)
@@ -131,6 +132,7 @@ def send_payslip_email(payslip_id):
         # Create email log with server response
         email_log = EmailLog(
             payslip_id=payslip.id,
+            payroll_id=payroll_id,
             recipient=employee.email,
             subject=subject,
             status='sent',
@@ -150,6 +152,7 @@ def send_payslip_email(payslip_id):
         # Create email log with error
         email_log = EmailLog(
             payslip_id=payslip.id,
+            payroll_id=payroll_id,
             recipient=employee.email,
             subject=subject,
             status='failed',
@@ -184,11 +187,28 @@ def send_all_payslips(payroll_id):
     failed_count = 0
     
     for payslip in payslips:
-        success, _ = send_payslip_email(payslip.id)
+        success, _ = send_payslip_email(payslip.id, payroll_id)
         if success:
             sent_count += 1
         else:
             failed_count += 1
+    
+    # Update existing email logs for this payroll run to ensure they have the payroll_id
+    from models import EmailLog
+    
+    # Find all email logs related to these payslips that don't have a payroll_id
+    payslip_ids = [p.id for p in payslips]
+    email_logs = EmailLog.query.filter(
+        EmailLog.payslip_id.in_(payslip_ids),
+        EmailLog.payroll_id.is_(None)
+    ).all()
+    
+    # Update them with the payroll_id
+    for log in email_logs:
+        log.payroll_id = payroll_id
+    
+    if email_logs:
+        db.session.commit()
     
     return True, f"Sent {sent_count} payslips, {failed_count} failed", sent_count, failed_count
 
@@ -209,8 +229,8 @@ def retry_failed_emails():
     success_count = 0
     
     for log in failed_logs:
-        # Retry sending the email
-        success, _ = send_payslip_email(log.payslip_id)
+        # Retry sending the email with the payroll_id if it exists
+        success, _ = send_payslip_email(log.payslip_id, log.payroll_id)
         
         # Update retry count
         log.retry_count += 1

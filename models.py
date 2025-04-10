@@ -385,6 +385,7 @@ class EmailLog(db.Model):
     """Model for tracking email deliveries."""
     id = db.Column(db.Integer, primary_key=True)
     payslip_id = db.Column(db.Integer, db.ForeignKey('payslip.id'), nullable=False)
+    payroll_id = db.Column(db.Integer, db.ForeignKey('payroll.id'), nullable=True)
     recipient = db.Column(db.String(120), nullable=False)
     subject = db.Column(db.String(256), nullable=False)
     status = db.Column(db.String(20), nullable=False)  # 'sent', 'failed', 'pending'
@@ -393,8 +394,9 @@ class EmailLog(db.Model):
     send_date = db.Column(db.DateTime, default=datetime.utcnow)
     retry_count = db.Column(db.Integer, default=0)
     
-    # Relationship
+    # Relationships
     payslip = db.relationship('Payslip', backref='email_logs')
+    payroll = db.relationship('Payroll', backref='email_logs')
     
     def __repr__(self):
         return f'<EmailLog {self.id} for Payslip #{self.payslip_id}>'
