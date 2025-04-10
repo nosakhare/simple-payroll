@@ -1,6 +1,7 @@
 """
 Email configuration utility to update Flask-Mail settings from database.
 """
+import os
 from flask import current_app
 from flask_mail import Mail
 
@@ -36,12 +37,14 @@ def update_mail_config():
             if settings.mail_username:
                 current_app.config['MAIL_USERNAME'] = settings.mail_username
             
-            # Try environment variable first, fall back to database
-            mail_password = os.environ.get('MAIL_PASSWORD')
-            if mail_password:
-                current_app.config['MAIL_PASSWORD'] = mail_password
-            elif settings.mail_password:
+            # Prioritize database password over environment variable
+            if settings.mail_password:
                 current_app.config['MAIL_PASSWORD'] = settings.mail_password
+            else:
+                # Fall back to environment variable if database value not set
+                mail_password = os.environ.get('MAIL_PASSWORD')
+                if mail_password:
+                    current_app.config['MAIL_PASSWORD'] = mail_password
             
             if settings.mail_default_sender:
                 current_app.config['MAIL_DEFAULT_SENDER'] = settings.mail_default_sender

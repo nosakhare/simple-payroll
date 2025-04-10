@@ -57,8 +57,61 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
                 filename, content_type, data = attachment
                 msg.attach(filename, content_type, data)
         
-        # Send the email directly to capture any immediate errors
-        mail.send(msg)
+        # Debug information to help troubleshoot authentication
+        print(f"Email configuration: SERVER={current_app.config.get('MAIL_SERVER')}, PORT={current_app.config.get('MAIL_PORT')}")
+        print(f"Email authentication: USERNAME={current_app.config.get('MAIL_USERNAME')}, PASSWORD={'*' * (len(current_app.config.get('MAIL_PASSWORD', '')) if current_app.config.get('MAIL_PASSWORD') else 0)}")
+        print(f"Email security: TLS={current_app.config.get('MAIL_USE_TLS')}, SSL={current_app.config.get('MAIL_USE_SSL')}")
+        
+        # Check if we have authentication credentials
+        username = current_app.config.get('MAIL_USERNAME')
+        password = current_app.config.get('MAIL_PASSWORD')
+        
+        if not username or not password:
+            raise ValueError("Email authentication credentials (username and password) are not properly configured")
+        
+        # For debugging: show complete email configuration
+        print(f"Full email configuration: {current_app.config.get_namespace('MAIL_')}")
+        
+        # Create our own SMTP connection to ensure authentication works
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from email.mime.application import MIMEApplication
+        
+        # Create connection
+        server = smtplib.SMTP(current_app.config.get('MAIL_SERVER'), current_app.config.get('MAIL_PORT'))
+        server.set_debuglevel(1)  # Show SMTP debug output
+        
+        # Start TLS if needed
+        if current_app.config.get('MAIL_USE_TLS'):
+            server.starttls()
+        
+        # Login with credentials
+        server.login(username, password)
+        
+        # Create message
+        mime_msg = MIMEMultipart('alternative')
+        mime_msg['Subject'] = msg.subject
+        mime_msg['From'] = msg.sender
+        mime_msg['To'] = ', '.join(msg.recipients)
+        
+        # Attach text and HTML parts
+        if msg.body:
+            mime_msg.attach(MIMEText(msg.body, 'plain'))
+        if msg.html:
+            mime_msg.attach(MIMEText(msg.html, 'html'))
+        
+        # Attach files
+        if msg.attachments:
+            for attachment in msg.attachments:
+                filename, content_type, data = attachment
+                part = MIMEApplication(data)
+                part.add_header('Content-Disposition', 'attachment', filename=filename)
+                mime_msg.attach(part)
+        
+        # Send the email
+        server.sendmail(msg.sender, msg.recipients, mime_msg.as_string())
+        server.quit()
         
         print(f"Email sent successfully from: {sender} to: {recipients}")
         return True, "Message accepted by mail server for delivery"
