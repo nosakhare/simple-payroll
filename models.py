@@ -415,7 +415,14 @@ class CompanySettings(db.Model):
     company_tax_id = db.Column(db.String(50), nullable=True)
     company_logo = db.Column(db.String(256), nullable=True, default='static/img/company_logo.svg')
     
-    # Banking information removed as requested
+    # Email Configuration
+    mail_server = db.Column(db.String(120), nullable=True, default='smtp.gmail.com')
+    mail_port = db.Column(db.Integer, nullable=True, default=587)
+    mail_use_tls = db.Column(db.Boolean, nullable=True, default=True)
+    mail_use_ssl = db.Column(db.Boolean, nullable=True, default=False)
+    mail_username = db.Column(db.String(120), nullable=True)
+    mail_password = db.Column(db.String(120), nullable=True)
+    mail_default_sender = db.Column(db.String(120), nullable=True)
     
     # Timestamps
     last_updated_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
