@@ -35,8 +35,12 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
     """
     # If no sender is provided, try to get it from config (which is updated from the database)
     if sender is None:
-        # Try to get from the configuration which is populated from the database
-        sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+        # First try to use the authenticated username as sender (needed for services like Gmail)
+        sender = current_app.config.get('MAIL_USERNAME')
+        
+        # If not available, try the default sender
+        if not sender:
+            sender = current_app.config.get('MAIL_DEFAULT_SENDER')
         
         # If still None, try to get the company email
         if not sender:
@@ -93,9 +97,20 @@ def send_payslip_email(payslip_id, payroll_id=None):
     
     subject = f"Your Payslip - {employee.first_name} {employee.last_name}"
     
-    # Get company information from config
-    company_name = current_app.config.get('COMPANY_NAME', 'Nigerian Payroll System')
-    company_email = current_app.config.get('COMPANY_EMAIL', 'payroll@nigerianpayroll.com')
+    # Get company information from settings
+    from models import CompanySettings
+    settings = CompanySettings.get_settings()
+    
+    company_name = settings.company_name if settings else current_app.config.get('COMPANY_NAME', 'Nigerian Payroll System')
+    
+    # Use the mail username from settings if available (this is the authenticated sender)
+    company_email = None
+    if settings and settings.mail_username:
+        company_email = settings.mail_username
+    elif settings:
+        company_email = settings.company_email
+    else:
+        company_email = current_app.config.get('MAIL_USERNAME') or current_app.config.get('COMPANY_EMAIL', 'payroll@nigerianpayroll.com')
     
     # Render email templates
     text_body = render_template(
