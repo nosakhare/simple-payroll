@@ -162,6 +162,99 @@
 
 
 
+                        <div class="row">
+                            <div class="col-md-12 mb-3 mt-4">
+                                <h5 class="border-bottom pb-2">Email Configuration</h5>
+                                <p class="text-muted small">Configure email settings for sending payslips to employees.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.mail_server.label(class="form-label") }}
+                                {{ form.mail_server(class="form-control" + (" is-invalid" if form.mail_server.errors else "")) }}
+                                {% if form.mail_server.description %}
+                                <div class="form-text">{{ form.mail_server.description }}</div>
+                                {% endif %}
+                                {% for error in form.mail_server.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.mail_port.label(class="form-label") }}
+                                {{ form.mail_port(class="form-control" + (" is-invalid" if form.mail_port.errors else "")) }}
+                                {% if form.mail_port.description %}
+                                <div class="form-text">{{ form.mail_port.description }}</div>
+                                {% endif %}
+                                {% for error in form.mail_port.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.mail_use_tls(class="form-check-input" + (" is-invalid" if form.mail_use_tls.errors else "")) }}
+                                    {{ form.mail_use_tls.label(class="form-check-label") }}
+                                    {% if form.mail_use_tls.description %}
+                                    <div class="form-text">{{ form.mail_use_tls.description }}</div>
+                                    {% endif %}
+                                    {% for error in form.mail_use_tls.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.mail_use_ssl(class="form-check-input" + (" is-invalid" if form.mail_use_ssl.errors else "")) }}
+                                    {{ form.mail_use_ssl.label(class="form-check-label") }}
+                                    {% if form.mail_use_ssl.description %}
+                                    <div class="form-text">{{ form.mail_use_ssl.description }}</div>
+                                    {% endif %}
+                                    {% for error in form.mail_use_ssl.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.mail_username.label(class="form-label") }}
+                                {{ form.mail_username(class="form-control" + (" is-invalid" if form.mail_username.errors else "")) }}
+                                {% if form.mail_username.description %}
+                                <div class="form-text">{{ form.mail_username.description }}</div>
+                                {% endif %}
+                                {% for error in form.mail_username.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.mail_password.label(class="form-label") }}
+                                {{ form.mail_password(class="form-control" + (" is-invalid" if form.mail_password.errors else "")) }}
+                                {% if form.mail_password.description %}
+                                <div class="form-text">{{ form.mail_password.description }}</div>
+                                {% endif %}
+                                {% for error in form.mail_password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.mail_default_sender.label(class="form-label") }}
+                                {{ form.mail_default_sender(class="form-control" + (" is-invalid" if form.mail_default_sender.errors else "")) }}
+                                {% if form.mail_default_sender.description %}
+                                <div class="form-text">{{ form.mail_default_sender.description }}</div>
+                                {% endif %}
+                                {% for error in form.mail_default_sender.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
                         <div class="row mt-4">
                             <div class="col-md-12">
                                 <button type="submit" class="btn btn-primary">

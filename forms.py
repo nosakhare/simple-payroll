@@ -302,7 +302,21 @@ class CompanySettingsForm(FlaskForm):
     company_registration_number = StringField('Registration Number', validators=[Optional(), Length(max=50)])
     company_tax_id = StringField('Tax ID', validators=[Optional(), Length(max=50)])
     
-    # Banking Information fields removed as requested
+    # Email Configuration
+    mail_server = StringField('Mail Server', validators=[Optional(), Length(max=120)], 
+                             description='e.g., smtp.gmail.com, smtp.office365.com')
+    mail_port = IntegerField('Mail Port', validators=[Optional(), NumberRange(min=1, max=65535)],
+                            description='Common ports: 25, 465, 587')
+    mail_use_tls = BooleanField('Use TLS', default=True,
+                               description='Transport Layer Security encryption (usually enabled for port 587)')
+    mail_use_ssl = BooleanField('Use SSL', default=False,
+                               description='Secure Socket Layer encryption (usually enabled for port 465)')
+    mail_username = StringField('Mail Username', validators=[Optional(), Length(max=120)],
+                               description='Your email account username')
+    mail_password = PasswordField('Mail Password', validators=[Optional(), Length(max=120)],
+                                 description='Your email account password or app password')
+    mail_default_sender = StringField('Default Sender', validators=[Optional(), Length(max=120)],
+                                     description='Default from email address')
     
     # Logo (handled separately)
     submit = SubmitField('Save Settings')
