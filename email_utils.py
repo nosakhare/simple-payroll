@@ -16,7 +16,7 @@ def send_async_email(app, msg):
             # Log the error but don't raise it to prevent thread crashes
             print(f"Error sending email: {str(e)}")
 
-def send_email(subject, recipients, text_body, html_body, attachments=None):
+def send_email(subject, recipients, text_body, html_body, attachments=None, sender=None):
     """
     Send an email with optional attachments.
     
@@ -26,11 +26,21 @@ def send_email(subject, recipients, text_body, html_body, attachments=None):
         text_body: Plain text email body
         html_body: HTML email body
         attachments: List of tuples (filename, content_type, data)
+        sender: The email sender address, if None, will use Flask-Mail's default sender
         
     Returns:
         True if email was sent successfully, False otherwise
     """
-    msg = Message(subject, recipients=recipients)
+    # If no sender is provided, try to get it from config (which is updated from the database)
+    if sender is None:
+        # Try to get from the configuration which is populated from the database
+        sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+        
+        # If still None, try to get the company email
+        if not sender:
+            sender = current_app.config.get('COMPANY_EMAIL')
+    
+    msg = Message(subject, recipients=recipients, sender=sender)
     msg.body = text_body
     msg.html = html_body
     
@@ -45,6 +55,7 @@ def send_email(subject, recipients, text_body, html_body, attachments=None):
     thr = Thread(target=send_async_email, args=[app, msg])
     thr.start()
     
+    print(f"Sending email from: {sender} to: {recipients}")
     return True
 
 def send_payslip_email(payslip_id):
@@ -101,7 +112,8 @@ def send_payslip_email(payslip_id):
             recipients=[employee.email],
             text_body=text_body,
             html_body=html_body,
-            attachments=attachments
+            attachments=attachments,
+            sender=company_email
         )
         
         # Update payslip record
