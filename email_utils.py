@@ -29,7 +29,9 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
         sender: The email sender address, if None, will use Flask-Mail's default sender
         
     Returns:
-        True if email was sent successfully, False otherwise
+        Tuple of (success, server_response) where:
+        - success: True if email was sent successfully, False otherwise
+        - server_response: The response from the mail server or error message
     """
     # If no sender is provided, try to get it from config (which is updated from the database)
     if sender is None:
@@ -40,23 +42,27 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
         if not sender:
             sender = current_app.config.get('COMPANY_EMAIL')
     
-    msg = Message(subject, recipients=recipients, sender=sender)
-    msg.body = text_body
-    msg.html = html_body
-    
-    # Add attachments if any
-    if attachments:
-        for attachment in attachments:
-            filename, content_type, data = attachment
-            msg.attach(filename, content_type, data)
-    
-    # Send the email asynchronously to not block the request
-    app = current_app._get_current_object()
-    thr = Thread(target=send_async_email, args=[app, msg])
-    thr.start()
-    
-    print(f"Sending email from: {sender} to: {recipients}")
-    return True
+    try:
+        msg = Message(subject, recipients=recipients, sender=sender)
+        msg.body = text_body
+        msg.html = html_body
+        
+        # Add attachments if any
+        if attachments:
+            for attachment in attachments:
+                filename, content_type, data = attachment
+                msg.attach(filename, content_type, data)
+        
+        # Send the email directly to capture any immediate errors
+        mail.send(msg)
+        
+        print(f"Email sent successfully from: {sender} to: {recipients}")
+        return True, "Message accepted by mail server for delivery"
+        
+    except Exception as e:
+        error_message = str(e)
+        print(f"Failed to send email: {error_message}")
+        return False, error_message
 
 def send_payslip_email(payslip_id):
     """
@@ -106,28 +112,30 @@ def send_payslip_email(payslip_id):
     # Create attachment
     attachments = [(payslip.filename, 'application/pdf', payslip.pdf_data)]
     
-    try:
-        send_email(
-            subject=subject,
-            recipients=[employee.email],
-            text_body=text_body,
-            html_body=html_body,
-            attachments=attachments,
-            sender=company_email
-        )
-        
+    # Send the email and get the server response
+    success, server_response = send_email(
+        subject=subject,
+        recipients=[employee.email],
+        text_body=text_body,
+        html_body=html_body,
+        attachments=attachments,
+        sender=company_email
+    )
+    
+    if success:
         # Update payslip record
         payslip.is_emailed = True
         payslip.email_date = datetime.utcnow()
         payslip.email_status = 'sent'
         
-        # Create email log
+        # Create email log with server response
         email_log = EmailLog(
             payslip_id=payslip.id,
             recipient=employee.email,
             subject=subject,
             status='sent',
-            send_date=datetime.utcnow()
+            send_date=datetime.utcnow(),
+            server_response=server_response
         )
         
         db.session.add(email_log)
@@ -135,7 +143,7 @@ def send_payslip_email(payslip_id):
         
         return True, f"Payslip emailed to {employee.email}"
     
-    except Exception as e:
+    else:
         # Update payslip record
         payslip.email_status = 'failed'
         
@@ -145,14 +153,14 @@ def send_payslip_email(payslip_id):
             recipient=employee.email,
             subject=subject,
             status='failed',
-            error_message=str(e),
+            error_message=server_response,
             send_date=datetime.utcnow()
         )
         
         db.session.add(email_log)
         db.session.commit()
         
-        return False, f"Failed to send email: {str(e)}"
+        return False, f"Failed to send email: {server_response}"
 
 def send_all_payslips(payroll_id):
     """
