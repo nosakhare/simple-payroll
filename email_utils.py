@@ -103,11 +103,31 @@ def send_email(subject, recipients, text_body, html_body, attachments=None, send
         
         # Attach files
         if msg.attachments:
+            print(f"Attachments found: {len(msg.attachments)}")
             for attachment in msg.attachments:
-                filename, content_type, data = attachment
-                part = MIMEApplication(data)
-                part.add_header('Content-Disposition', 'attachment', filename=filename)
-                mime_msg.attach(part)
+                print(f"Attachment type: {type(attachment)}, dir: {dir(attachment)}")
+                
+                # Handle Flask-Mail Attachment objects which have filename, content_type and data attributes
+                if hasattr(attachment, 'filename') and hasattr(attachment, 'data'):
+                    print(f"Processing as Attachment object with filename: {attachment.filename}")
+                    filename = attachment.filename
+                    data = attachment.data
+                    part = MIMEApplication(data)
+                    part.add_header('Content-Disposition', 'attachment', filename=filename)
+                    mime_msg.attach(part)
+                # Handle tuples in our custom format (filename, content_type, data)
+                elif isinstance(attachment, tuple) and len(attachment) == 3:
+                    print(f"Processing as tuple: {attachment[0]}, {attachment[1]}")
+                    filename, content_type, data = attachment
+                    part = MIMEApplication(data)
+                    part.add_header('Content-Disposition', 'attachment', filename=filename)
+                    mime_msg.attach(part)
+                # Fall back to using the attachment as is if it has binary data
+                elif hasattr(attachment, 'disposition') and hasattr(attachment, 'content_type'):
+                    print(f"Processing as email.message.Message object")
+                    mime_msg.attach(attachment)
+                else:
+                    print(f"Warning: Unknown attachment format: {attachment}")
         
         # Send the email
         server.sendmail(msg.sender, msg.recipients, mime_msg.as_string())
