@@ -78,8 +78,10 @@ def create_app(config_class=Config):
     import json
     @app.template_filter('from_json')
     def from_json_filter(value):
-        """Convert a JSON string to a Python dictionary."""
-        return json.loads(value) if value else {}
+        """Ensure a JSON value is returned as a dictionary."""
+        if isinstance(value, str):
+            return json.loads(value) if value else {}
+        return value or {}
         
     # Add company settings to all templates
     @app.context_processor

@@ -212,10 +212,10 @@ def view_payroll_item(id):
     # Get all adjustments for this payroll item
     adjustments = PayrollAdjustment.query.filter_by(payroll_item_id=id).order_by(PayrollAdjustment.date_created.desc()).all()
     
-    # Parse JSON fields from the payroll item
-    allowances_dict = json.loads(payroll_item.allowances) if payroll_item.allowances else {}
-    deductions_dict = json.loads(payroll_item.deductions) if payroll_item.deductions else {}
-    tax_details_dict = json.loads(payroll_item.tax_details) if payroll_item.tax_details else {}
+    # JSON fields are stored as dictionaries
+    allowances_dict = payroll_item.allowances or {}
+    deductions_dict = payroll_item.deductions or {}
+    tax_details_dict = payroll_item.tax_details or {}
     
     # Create a new adjustment form if the payroll is in an editable state
     adjustment_form = None

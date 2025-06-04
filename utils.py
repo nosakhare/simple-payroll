@@ -1,4 +1,3 @@
-import json
 import datetime as dt
 from datetime import datetime, date, timedelta
 from models import TaxBracket, Employee, Payroll, PayrollItem, SalaryConfiguration
@@ -247,19 +246,19 @@ def process_payroll(payroll_id):
             other_deductions=0.0,
             net_pay=monthly_net_pay,
             is_adjusted=False,
-            allowances=json.dumps({
+            allowances={
                 'Housing Allowance': housing_allowance,
                 'Transport Allowance': transport_allowance,
                 'Utility Allowance': utility_allowance,
                 'Meal Allowance': meal_allowance,
                 'Clothing Allowance': clothing_allowance
-            }),
-            deductions=json.dumps({
+            },
+            deductions={
                 'Pension': monthly_pension,
                 'NHF': monthly_nhf,
                 'PAYE Tax': monthly_tax
-            }),
-            tax_details=json.dumps({
+            },
+            tax_details={
                 'Annual Basic Salary': annual_basic,
                 'Annual Gross Income': annual_gross,
                 'Consolidated Relief': consolidated_relief,
@@ -267,7 +266,7 @@ def process_payroll(payroll_id):
                 'Annual Tax': annual_tax,
                 'Monthly Tax': monthly_tax,
                 'Tax Brackets': tax_details
-            })
+            }
         )
         
         # Add to database
@@ -324,10 +323,10 @@ def generate_payslip_data(payroll_item_id):
     # Get any adjustments for this payroll item
     adjustments = PayrollAdjustment.query.filter_by(payroll_item_id=payroll_item_id).all()
     
-    # Parse JSON fields
-    allowances = json.loads(payroll_item.allowances)
-    deductions = json.loads(payroll_item.deductions)
-    tax_details = json.loads(payroll_item.tax_details)
+    # Fields are stored as JSON in the database and returned as dictionaries
+    allowances = payroll_item.allowances or {}
+    deductions = payroll_item.deductions or {}
+    tax_details = payroll_item.tax_details or {}
     
     # Calculate adjustment totals by type
     bonuses = sum(adj.amount for adj in adjustments if adj.adjustment_type == 'bonus')
