@@ -1,4 +1,3 @@
-import datetime as dt
 from datetime import datetime, date, timedelta
 from models import TaxBracket, Employee, Payroll, PayrollItem, SalaryConfiguration
 
@@ -467,7 +466,7 @@ def count_working_days(start_date, end_date):
             working_days += 1
         
         # Move to next day
-        current_date += dt.timedelta(days=1)
+        current_date += timedelta(days=1)
     
     return working_days
 
@@ -485,18 +484,18 @@ def calculate_proration_factor(start_date, end_date, month=None, year=None):
         Float between 0 and 1 representing the proration factor
     """
     # Use current month and year if not specified
-    today = dt.date.today()
+    today = date.today()
     if month is None:
         month = today.month
     if year is None:
         year = today.year
-    
+
     # Get the first and last day of the specified month
-    first_day = dt.date(year, month, 1)
+    first_day = date(year, month, 1)
     if month == 12:
-        last_day = dt.date(year, 12, 31)
+        last_day = date(year, 12, 31)
     else:
-        last_day = dt.date(year, month + 1, 1) - dt.timedelta(days=1)
+        last_day = date(year, month + 1, 1) - timedelta(days=1)
     
     # Count total working days in the month
     total_working_days = count_working_days(first_day, last_day)
